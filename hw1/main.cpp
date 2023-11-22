@@ -10,13 +10,12 @@ const uint SIZE = 1 << 22;
 const uint MIN_STRIDE = sizeof(uint);
 const uint MAX_STRIDE = 1 << 16;
 const uint MAX_ASSOCIATIVITY = 32;
-const uint N = 100000;
 
 const uint ASSOCIATIVITY_ITERATIONS = 10;
 const uint LINE_SIZE_ITERATIONS = 200;
 
 const double ASSOC_THRESHOLD = 1.2;
-const double LINE_SIZE_THRESHOLD = 1.01;
+const double LINE_SIZE_THRESHOLD = 1.2;
 
 uint a[SIZE];
 
@@ -44,7 +43,9 @@ double measure(int len) {
 
     unsigned int curr = 0;
 
-    for (int i = 0; i < N; i++) {
+    int count = len * 50;
+
+    for (int i = 0; i < count; i++) {
         curr = a[curr];
 //        sum = (curr + sum) % SIZE;
     }
@@ -52,7 +53,7 @@ double measure(int len) {
     // for (int iteration = 0; iteration < ITERATIONS; iteration++) {
 
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < N; i++) {
+    for (int i = 0; i < count; i++) {
         curr = a[curr];
         sum = (curr + sum) % SIZE;
     }
@@ -61,7 +62,7 @@ double measure(int len) {
     res += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     // }
 
-    return double(res) / N;
+    return double(res) / count;
 
 }
 
