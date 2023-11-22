@@ -209,7 +209,7 @@ int get_line_size(int assoc, int cache_size) {
     int mx = 0;
     int line_size = 0;
     for (auto [l, c] : mp) {
-        std::cout << l << " " << c << std::endl;
+//        std::cout << l << " " << c << std::endl;
         if (c > mx && l != -1) {
             mx = c;
             line_size = l;
