@@ -6,28 +6,30 @@
 #include <map>
 #include <utility>
 
-const uint SIZE = 1 << 22;
-const uint MIN_STRIDE = sizeof(uint);
-const uint MAX_STRIDE = 1 << 16;
-const uint MAX_ASSOCIATIVITY = 32;
+const int  SIZE = 1 << 22;
+const int  MIN_STRIDE = sizeof(uint32_t);
+const int  MAX_STRIDE = 1 << 16;
+const int  MAX_ASSOCIATIVITY = 32;
 
-const uint ASSOCIATIVITY_ITERATIONS = 10;
-const uint LINE_SIZE_ITERATIONS = 200;
+const int  ASSOCIATIVITY_ITERATIONS = 10;
+const int  LINE_SIZE_ITERATIONS = 100;
+
+const int MEASURE_N = 1 << 20;
 
 const double ASSOC_THRESHOLD = 1.2;
-const double LINE_SIZE_THRESHOLD = 1.2;
+const double LINE_SIZE_THRESHOLD = 1.1;
 
-uint a[SIZE];
+uint32_t  a[SIZE];
+
+std::random_device rd;
+std::mt19937 g(rd());
 
 void generate_chain(int spots, int stride0) {
+    int stride = stride0 / sizeof(uint32_t );
 
-    uint stride = stride0 / sizeof(uint);
-
-    std::vector<uint> b(spots);
+    std::vector<int> b(spots);
     std::iota(b.begin(), b.end(), 0);
 
-    std::random_device rd;
-    std::mt19937 g(rd());
     std::shuffle(b.begin(), b.end(), g);
 
     for (int i = 0; i < spots; i++) {
@@ -41,13 +43,14 @@ double measure(int len) {
 
     long long res = 0;
 
-    unsigned int curr = 0;
+    int curr = 0;
 
-    int count = len * 50;
+    int count = MEASURE_N;
 
-    for (int i = 0; i < count; i++) {
+    // Load into cache
+    for (int i = 0; i < len; i++) {
         curr = a[curr];
-//        sum = (curr + sum) % SIZE;
+        sum = (curr + sum) % SIZE;
     }
 
     // for (int iteration = 0; iteration < ITERATIONS; iteration++) {
@@ -55,7 +58,7 @@ double measure(int len) {
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < count; i++) {
         curr = a[curr];
-        sum = (curr + sum) % SIZE;
+        sum += curr;
     }
     auto end = std::chrono::high_resolution_clock::now();
 
@@ -67,30 +70,30 @@ double measure(int len) {
 }
 
 
-void get_assoc_it(uint& assoc, uint& cache_size) {
+void get_assoc_it(int& assoc, int& cache_size) {
     int str_id = 0;
 
-    std::vector<uint> assoc_count(MAX_ASSOCIATIVITY, 0);
-    std::vector<uint> min_size(MAX_ASSOCIATIVITY, 0);
+    std::vector<int> assoc_count(MAX_ASSOCIATIVITY, 0);
+    std::vector<int> min_size(MAX_ASSOCIATIVITY, 0);
 
     for (int stride = MIN_STRIDE; stride < MAX_STRIDE; stride*=2, str_id++) {
 
         double pre_time = -1;
 
-        for (int spots = 2; spots < MAX_ASSOCIATIVITY; spots+=2) {
+        for (int spots = 2; spots < MAX_ASSOCIATIVITY; spots *= 2) {
 
             generate_chain(spots, stride);
             double time = measure(spots);
 
-            generate_chain(spots-1, stride);
+//            generate_chain(spots-1, stride);
             // time += measure(spots-1);
 
             double k = time / pre_time;
-            // std::cout << spots << " " << stride << " " << time << " " << k << std::endl;
+//             std::cout << spots << " " << stride << " " << time << " " << k << std::endl;
 
             if (k > ASSOC_THRESHOLD) {
-                uint assoc = spots;
-                uint cache_size = assoc * stride;
+                int assoc = spots / 2;
+                int cache_size = assoc * stride;
 
                 assoc_count[assoc]++;
                 if (assoc_count[assoc] == 1) {
@@ -117,9 +120,9 @@ void get_assoc_it(uint& assoc, uint& cache_size) {
 
 }
 
-void get_assoc(uint& assoc, uint& cache_size) {
+void get_assoc(int& assoc, int& cache_size) {
 
-    std::map<std::pair<uint, uint>, int> mp;
+    std::map<std::pair<int, int>, int> mp;
 
     for (int i = 0; i < ASSOCIATIVITY_ITERATIONS; i++) {
         get_assoc_it(assoc, cache_size);
@@ -139,8 +142,6 @@ void get_assoc(uint& assoc, uint& cache_size) {
 
 }
 
-const uint CACHE_LINE_INDICES = 4;
-
 void generate_chain_line(int assoc, int cache_size, int line_size) {
 
     int tag_offset = cache_size;
@@ -148,7 +149,7 @@ void generate_chain_line(int assoc, int cache_size, int line_size) {
 
     int spots = indices * assoc;
 
-    std::vector<uint> b(spots);
+    std::vector<uint32_t> b(spots);
 
     for (int i = 0; i < indices; i++) {
         for (int tag = 0; tag < assoc; tag++) {
@@ -175,9 +176,12 @@ int get_line_size_it(int assoc, int cache_size) {
 
     double pre_time = -1;
 
+    double max_k = 0;
+    int max_line_size = -1;
+
     for (int line_size = MIN_STRIDE; line_size < cache_size; line_size*=2) {
 
-        int spots = CACHE_LINE_INDICES * assoc;
+        int spots = assoc;
 
         generate_chain_line(assoc, cache_size, line_size);
         double time = measure(spots);
@@ -185,6 +189,11 @@ int get_line_size_it(int assoc, int cache_size) {
         double k = time / pre_time;
 
         // std::cout << spots << " " << line_size << " " << time << " " << k << std::endl;
+
+        if (k > max_k) {
+            max_k = k;
+            max_line_size = line_size;
+        }
 
         if (k > LINE_SIZE_THRESHOLD) {
             return line_size;
@@ -195,7 +204,7 @@ int get_line_size_it(int assoc, int cache_size) {
 //        std::cout << str_id << " " << std_jumps << " " << sum.count() / spots_count * 10e11 << std::endl;
     }
 
-    return -1;
+    return max_line_size;
 }
 
 int get_line_size(int assoc, int cache_size) {
@@ -223,8 +232,8 @@ int get_line_size(int assoc, int cache_size) {
 
 int main() {
 
-    uint assoc = 0;
-    uint cache_size = 0;
+    int assoc = 0;
+    int cache_size = 0;
 
     get_assoc(assoc, cache_size);
 
