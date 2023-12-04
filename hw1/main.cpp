@@ -6,7 +6,7 @@
 #include <map>
 #include <utility>
 
-const int  SIZE = 1 << 24;
+const int  SIZE = 1 << 23;
 const int  MIN_STRIDE = 512;
 const int  MAX_STRIDE = 1 << 16;
 const int  MAX_ASSOCIATIVITY = 32;
@@ -144,8 +144,8 @@ void get_assoc(int& assoc, int& cache_size) {
 
 void generate_chain_line(int assoc, int cache_size, int line_size) {
 
-    int tag_offset = cache_size;
-    int indices = cache_size / line_size / assoc;
+    int tag_offset = cache_size / sizeof(uint32_t);
+    int indices = cache_size / line_size / assoc / sizeof(uint32_t);
 
     int spots = indices * assoc;
 
@@ -154,7 +154,7 @@ void generate_chain_line(int assoc, int cache_size, int line_size) {
     for (int i = 0; i < indices; i++) {
         for (int tag = 0; tag < assoc; tag++) {
             int line_index = i * line_size;
-            int line_i = i % 32;
+            int line_i = i % 8;
             int line_tag = tag * tag_offset + line_i * assoc * tag_offset;
 
             b[tag + i * assoc] = line_index + line_tag + line_i;
@@ -193,11 +193,11 @@ int get_line_size_it(int assoc, int cache_size) {
 
         if (k > max_k) {
             max_k = k;
-            max_line_size = line_size*2;
+            max_line_size = line_size/2;
         }
 
         if (k > LINE_SIZE_THRESHOLD) {
-            return line_size*2;
+            return line_size/2;
         }
 
         pre_time = time;            
