@@ -53,6 +53,8 @@ double measure(int len) {
         sum = (curr + sum) % SIZE;
     }
 
+    curr = 0;
+
     // for (int iteration = 0; iteration < ITERATIONS; iteration++) {
 
     auto start = std::chrono::high_resolution_clock::now();
@@ -193,7 +195,7 @@ int get_line_size_it(int assoc, int cache_size) {
 
         if (k > max_k) {
             max_k = k;
-            max_line_size = line_size/2;
+            max_line_size = line_size;
         }
 
 //        if (k > LINE_SIZE_THRESHOLD) {
@@ -219,7 +221,7 @@ int get_line_size(int assoc, int cache_size) {
     int mx = 0;
     int line_size = 0;
     for (auto [l, c] : mp) {
-        std::cout << l << " " << c << std::endl;
+//        std::cout << l << " " << c << std::endl;
         if (c > mx && l != -1) {
             mx = c;
             line_size = l;
