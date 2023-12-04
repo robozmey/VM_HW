@@ -144,7 +144,7 @@ void get_assoc(int& assoc, int& cache_size) {
 
 void generate_chain_line(int assoc, int cache_size, int line_size) {
 
-    int tag_offset = cache_size / sizeof(uint32_t);
+    int tag_offset = cache_size;
     int indices = cache_size / line_size;
 
     int spots = indices * assoc;
@@ -157,13 +157,13 @@ void generate_chain_line(int assoc, int cache_size, int line_size) {
 //            int line_i = i % 8;
             int line_tag = tag * tag_offset; // + line_i * assoc * tag_offset;
 
-            b[tag + i * assoc] = line_index + line_tag; // + line_i;
+            b[tag + i * assoc] = (line_index + line_tag) / sizeof(uint32_t); // + line_i;
         }
     }
 
     std::random_device rd;
     std::mt19937 g(rd());
-//    std::shuffle(b.begin(), b.end(), g);
+    std::shuffle(b.begin(), b.end(), g);
 
     for (int i = 0; i < spots; i++) {
         a[b[i]] = b[(i+1) % spots];
