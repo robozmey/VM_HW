@@ -7,7 +7,7 @@
 #include <utility>
 
 const int  SIZE = 1 << 24;
-const int  MIN_STRIDE = sizeof(uint32_t);
+const int  MIN_STRIDE = 512;
 const int  MAX_STRIDE = 1 << 16;
 const int  MAX_ASSOCIATIVITY = 32;
 
@@ -180,7 +180,7 @@ int get_line_size_it(int assoc, int cache_size) {
     double max_k = 0;
     int max_line_size = -1;
 
-    for (int line_size = MIN_STRIDE; line_size < cache_size; line_size*=2) {
+    for (int line_size = 8; line_size < cache_size; line_size*=2) {
 
         int spots = assoc;
 
