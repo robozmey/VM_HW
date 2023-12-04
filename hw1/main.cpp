@@ -12,12 +12,12 @@ const int  MAX_STRIDE = 1 << 16;
 const int  MAX_ASSOCIATIVITY = 32;
 
 const int  ASSOCIATIVITY_ITERATIONS = 10;
-const int  LINE_SIZE_ITERATIONS = 20;
+const int  LINE_SIZE_ITERATIONS = 100;
 
 const int MEASURE_N = 1 << 20;
 
 const double ASSOC_THRESHOLD = 1.25;
-const double LINE_SIZE_THRESHOLD = 1.15;
+const double LINE_SIZE_THRESHOLD = 1.5;
 
 uint32_t  a[SIZE];
 
@@ -145,7 +145,7 @@ void get_assoc(int& assoc, int& cache_size) {
 void generate_chain_line(int assoc, int cache_size, int line_size) {
 
     int tag_offset = cache_size / sizeof(uint32_t);
-    int indices = cache_size / line_size / assoc / sizeof(uint32_t);
+    int indices = cache_size / line_size;
 
     int spots = indices * assoc;
 
@@ -154,16 +154,16 @@ void generate_chain_line(int assoc, int cache_size, int line_size) {
     for (int i = 0; i < indices; i++) {
         for (int tag = 0; tag < assoc; tag++) {
             int line_index = i * line_size;
-            int line_i = i % 8;
-            int line_tag = tag * tag_offset + line_i * assoc * tag_offset;
+//            int line_i = i % 8;
+            int line_tag = tag * tag_offset; // + line_i * assoc * tag_offset;
 
-            b[tag + i * assoc] = line_index + line_tag + line_i;
+            b[tag + i * assoc] = line_index + line_tag; // + line_i;
         }
     }
 
     std::random_device rd;
     std::mt19937 g(rd());
-    std::shuffle(b.begin(), b.end(), g);
+//    std::shuffle(b.begin(), b.end(), g);
 
     for (int i = 0; i < spots; i++) {
         a[b[i]] = b[(i+1) % spots];
@@ -196,9 +196,9 @@ int get_line_size_it(int assoc, int cache_size) {
             max_line_size = line_size/2;
         }
 
-        if (k > LINE_SIZE_THRESHOLD) {
-            return line_size/2;
-        }
+//        if (k > LINE_SIZE_THRESHOLD) {
+//            return line_size/2;
+//        }
 
         pre_time = time;            
 
@@ -219,7 +219,7 @@ int get_line_size(int assoc, int cache_size) {
     int mx = 0;
     int line_size = 0;
     for (auto [l, c] : mp) {
-//        std::cout << l << " " << c << std::endl;
+        std::cout << l << " " << c << std::endl;
         if (c > mx && l != -1) {
             mx = c;
             line_size = l;
