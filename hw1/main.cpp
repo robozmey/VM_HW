@@ -16,7 +16,7 @@ const int  LINE_SIZE_ITERATIONS = 20;
 
 const int MEASURE_N = 1 << 20;
 
-const double ASSOC_THRESHOLD = 1.2;
+const double ASSOC_THRESHOLD = 1.25;
 const double LINE_SIZE_THRESHOLD = 1.15;
 
 uint32_t  a[SIZE];
