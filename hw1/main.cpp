@@ -82,8 +82,10 @@ void get_assoc_it(int& assoc, int& cache_size) {
 
         int pre_spots = 1;
 
-        for (int spots = 1; spots < MAX_ASSOCIATIVITY; spots*=2) {
+        for (int spots = 0; spots < MAX_ASSOCIATIVITY; spots+=2) {
             int real_spots = spots;
+            if (real_spots == 0)
+                real_spots = 1;
 
             generate_chain(real_spots, stride);
             double time = measure(real_spots);
@@ -162,10 +164,10 @@ int generate_chain_line(int assoc, int cache_size, int line_size) {
                 int field_index = index * line_size;
                 int field_tag = (tag + index * assoc) * tag_offset; // + line_i * assoc * tag_offset;
 
-    //            if ((field_index | field_tag) != (field_index + field_tag)) {
-    //                std::cout << i << " " << tag << " - " << line_size << " " << tag_offset << " - " << (field_index | field_tag) << " " << (field_index + field_tag) << std::endl;
-    //                exit(1);
-    //            }
+                //            if ((field_index | field_tag) != (field_index + field_tag)) {
+                //                std::cout << i << " " << tag << " - " << line_size << " " << tag_offset << " - " << (field_index | field_tag) << " " << (field_index + field_tag) << std::endl;
+                //                exit(1);
+                //            }
 
                 b[el + (tag + index * assoc) * line_size / sizeof(uint32_t)] = (field_index + field_tag) / sizeof(uint32_t) + el; // + line_i;
             }
@@ -209,7 +211,7 @@ int get_line_size_it(int assoc, int cache_size) {
             return line_size * sizeof(uint32_t);
         }
 
-        pre_time = time;            
+        pre_time = time;
 
 //        std::cout << str_id << " " << std_jumps << " " << sum.count() / spots_count * 10e11 << std::endl;
     }
@@ -256,7 +258,7 @@ int main() {
     int line_size = get_line_size(assoc, cache_size);
 
     std::cout << "Line size: " << line_size << std::endl;
-    
+
 
     return 0;
 }
