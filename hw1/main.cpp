@@ -82,19 +82,24 @@ void get_assoc_it(int& assoc, int& cache_size) {
 
         double pre_time = -1;
 
-        for (int spots = 1; spots < MAX_ASSOCIATIVITY; spots++) {
+        int pre_spots = 1;
 
-            generate_chain(spots, stride);
-            double time = measure(spots);
+        for (int spots = 0; spots < MAX_ASSOCIATIVITY; spots+=2) {
+            int real_spots = spots;
+            if (real_spots == 0)
+                real_spots = 1;
 
-//            generate_chain(spots-1, stride);
-            // time += measure(spots-1);
+            generate_chain(real_spots, stride);
+            double time = measure(real_spots);
+
+//            generate_chain(real_spots-1, stride);
+            // time += measure(real_spots-1);
 
             double k = time / pre_time;
-//             std::cout << spots << " " << stride << " " << time << " " << k << std::endl;
+//             std::cout << real_spots << " " << stride << " " << time << " " << k << std::endl;
 
             if (k > ASSOC_THRESHOLD) {
-                int assoc = spots - 1;
+                int assoc = pre_spots;
                 int cache_size = assoc * stride;
 
                 assoc_count[assoc]++;
@@ -104,7 +109,8 @@ void get_assoc_it(int& assoc, int& cache_size) {
 
             }
 
-            pre_time = time;            
+            pre_time = time;
+            pre_spots = real_spots;
         }
 
 //        std::cout << str_id << " " << std_jumps << " " << sum.count() / spots_count * 10e11 << std::endl;
@@ -146,8 +152,8 @@ void get_assoc(int& assoc, int& cache_size) {
 
 void generate_chain_line(int assoc, int cache_size, int line_size) {
 
-    int tag_offset = cache_size;
-    int indices = cache_size / line_size;
+    int tag_offset = cache_size / assoc;
+    int indices = cache_size / line_size  / assoc;
 
     int spots = indices * assoc;
 
@@ -182,7 +188,7 @@ int get_line_size_it(int assoc, int cache_size) {
     double max_k = 0;
     int max_line_size = -1;
 
-    for (int line_size = 8; line_size < cache_size; line_size*=2) {
+    for (int line_size = cache_size / assoc; line_size >= 8; line_size/=2) {
 
         int spots = assoc;
 
@@ -195,7 +201,7 @@ int get_line_size_it(int assoc, int cache_size) {
 
         if (k > max_k) {
             max_k = k;
-            max_line_size = line_size;
+            max_line_size = line_size * 2;
         }
 
 //        if (k > LINE_SIZE_THRESHOLD) {
