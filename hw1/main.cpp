@@ -82,10 +82,8 @@ void get_assoc_it(int& assoc, int& cache_size) {
 
         int pre_spots = 1;
 
-        for (int spots = 0; spots < MAX_ASSOCIATIVITY; spots+=2) {
+        for (int spots = 1; spots < MAX_ASSOCIATIVITY; spots*=2) {
             int real_spots = spots;
-            if (real_spots == 0)
-                real_spots = 1;
 
             generate_chain(real_spots, stride);
             double time = measure(real_spots);
