@@ -12,14 +12,14 @@ const int  MAX_STRIDE = 1 << 16;
 const int  MAX_ASSOCIATIVITY = 32;
 
 const int  ASSOCIATIVITY_ITERATIONS = 10;
-const int  LINE_SIZE_ITERATIONS = 100;
+const int  LINE_SIZE_ITERATIONS = 10;
 
 const int MEASURE_N = 1 << 20;
 
 const double ASSOC_THRESHOLD = 1.2;
 const double LINE_SIZE_THRESHOLD = 1.2;
 
-uint32_t a[SIZE];
+uint32_t a[SIZE] alignas(8192);
 
 std::random_device rd;
 std::mt19937 g(rd());
@@ -154,21 +154,23 @@ int generate_chain_line(int assoc, int cache_size, int line_size) {
     int tag_offset = cache_size / assoc;
     int indices = tag_offset / line_size;
 
-    int spots = indices * assoc;
+    int spots = indices * assoc * line_size / sizeof(uint32_t);
 
     std::vector<uint32_t> b(spots);
 
     for (int index = 0; index < indices; index++) {
         for (int tag = 0; tag < assoc; tag++) {
-            int field_index = index * line_size;
-            int field_tag = (tag + index * assoc) * tag_offset; // + line_i * assoc * tag_offset;
+            for (int el = 0; el < line_size / sizeof(uint32_t); el++) {
+                int field_index = index * line_size;
+                int field_tag = (tag + index * assoc) * tag_offset; // + line_i * assoc * tag_offset;
 
-//            if ((field_index | field_tag) != (field_index + field_tag)) {
-//                std::cout << i << " " << tag << " - " << line_size << " " << tag_offset << " - " << (field_index | field_tag) << " " << (field_index + field_tag) << std::endl;
-//                exit(1);
-//            }
+    //            if ((field_index | field_tag) != (field_index + field_tag)) {
+    //                std::cout << i << " " << tag << " - " << line_size << " " << tag_offset << " - " << (field_index | field_tag) << " " << (field_index + field_tag) << std::endl;
+    //                exit(1);
+    //            }
 
-            b[tag + index * assoc] = (field_index + field_tag) >> sizeof(uint32_t); // + line_i;
+                b[el + (tag + index * assoc) * line_size / sizeof(uint32_t)] = (field_index + field_tag) / sizeof(uint32_t) + el; // + line_i;
+            }
         }
     }
 
@@ -201,11 +203,12 @@ int get_line_size_it(int assoc, int cache_size) {
 
         if (k > max_k) {
             max_k = k;
-            max_line_size = line_size;
+            max_line_size = line_size * sizeof(uint32_t);
         }
 
         if (k > LINE_SIZE_THRESHOLD) {
-            return line_size;
+//            std::cout << max_k << " " << max_line_size << std::endl;
+            return line_size * sizeof(uint32_t);
         }
 
         pre_time = time;            
@@ -213,7 +216,7 @@ int get_line_size_it(int assoc, int cache_size) {
 //        std::cout << str_id << " " << std_jumps << " " << sum.count() / spots_count * 10e11 << std::endl;
     }
 
-    std::cout << max_k << " " << max_line_size << std::endl;
+//    std::cout << max_k << " " << max_line_size << std::endl;
 
     return max_line_size;
     return -1;
@@ -230,7 +233,7 @@ int get_line_size(int assoc, int cache_size) {
     int mx = 0;
     int line_size = 0;
     for (auto [l, c] : mp) {
-        std::cout << l << " " << c << std::endl;
+//        std::cout << l << " " << c << std::endl;
         if (c > mx && l != -1) {
             mx = c;
             line_size = l;
