@@ -16,16 +16,16 @@ const int  LINE_SIZE_ITERATIONS = 100;
 
 const int MEASURE_N = 1 << 20;
 
-const double ASSOC_THRESHOLD = 1.5;
-const double LINE_SIZE_THRESHOLD = 1.5;
+const double ASSOC_THRESHOLD = 1.2;
+const double LINE_SIZE_THRESHOLD = 1.2;
 
-uint32_t  a[SIZE];
+uint32_t a[SIZE];
 
 std::random_device rd;
 std::mt19937 g(rd());
 
 void generate_chain(int spots, int stride0) {
-    int stride = stride0 / sizeof(uint32_t );
+    int stride = stride0 / sizeof(uint32_t);
 
     std::vector<int> b(spots);
     std::iota(b.begin(), b.end(), 0);
@@ -40,8 +40,6 @@ void generate_chain(int spots, int stride0) {
 long long sum = 0;
 
 double measure(int len) {
-
-    long long res = 0;
 
     int curr = 0;
 
@@ -64,7 +62,7 @@ double measure(int len) {
     }
     auto end = std::chrono::high_resolution_clock::now();
 
-    res += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+    long long res = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     // }
 
     return double(res) / count;
@@ -141,6 +139,7 @@ void get_assoc(int& assoc, int& cache_size) {
     cache_size = 0;
     int mx = 0;
     for (auto [p, c] : mp) {
+//        std::cout << p.first  << " " << p.second << " - " << c << std::endl;
         if (c > mx) {
             mx = c;
             assoc = p.first;
@@ -150,27 +149,29 @@ void get_assoc(int& assoc, int& cache_size) {
 
 }
 
-void generate_chain_line(int assoc, int cache_size, int line_size) {
+int generate_chain_line(int assoc, int cache_size, int line_size) {
 
     int tag_offset = cache_size / assoc;
-    int indices = cache_size / line_size  / assoc;
+    int indices = tag_offset / line_size;
 
     int spots = indices * assoc;
 
     std::vector<uint32_t> b(spots);
 
-    for (int i = 0; i < indices; i++) {
+    for (int index = 0; index < indices; index++) {
         for (int tag = 0; tag < assoc; tag++) {
-            int line_index = i * line_size;
-//            int line_i = i % 8;
-            int line_tag = tag * tag_offset; // + line_i * assoc * tag_offset;
+            int field_index = index * line_size;
+            int field_tag = (tag + index * assoc) * tag_offset; // + line_i * assoc * tag_offset;
 
-            b[tag + i * assoc] = (line_index + line_tag) / sizeof(uint32_t); // + line_i;
+//            if ((field_index | field_tag) != (field_index + field_tag)) {
+//                std::cout << i << " " << tag << " - " << line_size << " " << tag_offset << " - " << (field_index | field_tag) << " " << (field_index + field_tag) << std::endl;
+//                exit(1);
+//            }
+
+            b[tag + index * assoc] = (field_index + field_tag) >> sizeof(uint32_t); // + line_i;
         }
     }
 
-    std::random_device rd;
-    std::mt19937 g(rd());
     std::shuffle(b.begin()+1, b.end(), g);
 
     for (int i = 0; i < spots; i++) {
@@ -179,41 +180,43 @@ void generate_chain_line(int assoc, int cache_size, int line_size) {
     }
     // std::cout << std::endl;
 
+    return spots;
 }
 
 int get_line_size_it(int assoc, int cache_size) {
 
     double pre_time = -1;
 
-    double max_k = 0;
+    double max_k = -1;
     int max_line_size = -1;
 
-    for (int line_size = cache_size / assoc; line_size >= 8; line_size/=2) {
+    for (int line_size = 8; line_size <= cache_size / assoc; line_size*=2) {
 
-        int spots = assoc;
-
-        generate_chain_line(assoc, cache_size, line_size);
+        int spots = generate_chain_line(assoc, cache_size, line_size);
         double time = measure(spots);
 
-        double k = time / pre_time;
+        double k = pre_time / time;
 
         // std::cout << spots << " " << line_size << " " << time << " " << k << std::endl;
 
         if (k > max_k) {
             max_k = k;
-            max_line_size = line_size * 2;
+            max_line_size = line_size;
         }
 
-//        if (k > LINE_SIZE_THRESHOLD) {
-//            return line_size/2;
-//        }
+        if (k > LINE_SIZE_THRESHOLD) {
+            return line_size;
+        }
 
         pre_time = time;            
 
 //        std::cout << str_id << " " << std_jumps << " " << sum.count() / spots_count * 10e11 << std::endl;
     }
 
+    std::cout << max_k << " " << max_line_size << std::endl;
+
     return max_line_size;
+    return -1;
 }
 
 int get_line_size(int assoc, int cache_size) {
@@ -227,7 +230,7 @@ int get_line_size(int assoc, int cache_size) {
     int mx = 0;
     int line_size = 0;
     for (auto [l, c] : mp) {
-//        std::cout << l << " " << c << std::endl;
+        std::cout << l << " " << c << std::endl;
         if (c > mx && l != -1) {
             mx = c;
             line_size = l;
