@@ -16,7 +16,7 @@ const int  LINE_SIZE_ITERATIONS = 10;
 
 const int MEASURE_N = 1 << 20;
 
-const double ASSOC_THRESHOLD = 1.2;
+const double ASSOC_THRESHOLD = 1.5;
 const double LINE_SIZE_THRESHOLD = 1.2;
 
 uint32_t a[SIZE] alignas(8192);
@@ -104,6 +104,7 @@ void get_assoc_it(int& assoc, int& cache_size) {
                 if (assoc_count[assoc] == 1) {
                     min_size[assoc] = cache_size;
                 }
+//                std::cout << k << " " << assoc << " " << cache_size << std::endl;
 
             }
 
