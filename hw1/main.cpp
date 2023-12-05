@@ -16,7 +16,7 @@ const int  LINE_SIZE_ITERATIONS = 100;
 
 const int MEASURE_N = 1 << 20;
 
-const double ASSOC_THRESHOLD = 1.25;
+const double ASSOC_THRESHOLD = 1.5;
 const double LINE_SIZE_THRESHOLD = 1.5;
 
 uint32_t  a[SIZE];
@@ -30,7 +30,7 @@ void generate_chain(int spots, int stride0) {
     std::vector<int> b(spots);
     std::iota(b.begin(), b.end(), 0);
 
-    std::shuffle(b.begin(), b.end(), g);
+    std::shuffle(b.begin()+1, b.end(), g);
 
     for (int i = 0; i < spots; i++) {
         a[b[i % spots]*stride] = b[(i+1) % spots]*stride;
@@ -82,7 +82,7 @@ void get_assoc_it(int& assoc, int& cache_size) {
 
         double pre_time = -1;
 
-        for (int spots = 2; spots < MAX_ASSOCIATIVITY; spots *= 2) {
+        for (int spots = 1; spots < MAX_ASSOCIATIVITY; spots++) {
 
             generate_chain(spots, stride);
             double time = measure(spots);
@@ -94,7 +94,7 @@ void get_assoc_it(int& assoc, int& cache_size) {
 //             std::cout << spots << " " << stride << " " << time << " " << k << std::endl;
 
             if (k > ASSOC_THRESHOLD) {
-                int assoc = spots / 2;
+                int assoc = spots - 1;
                 int cache_size = assoc * stride;
 
                 assoc_count[assoc]++;
@@ -165,7 +165,7 @@ void generate_chain_line(int assoc, int cache_size, int line_size) {
 
     std::random_device rd;
     std::mt19937 g(rd());
-    std::shuffle(b.begin(), b.end(), g);
+    std::shuffle(b.begin()+1, b.end(), g);
 
     for (int i = 0; i < spots; i++) {
         a[b[i]] = b[(i+1) % spots];
