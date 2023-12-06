@@ -16,7 +16,7 @@ const int  LINE_SIZE_ITERATIONS = 10;
 
 const int MEASURE_N = 1 << 20;
 
-const double ASSOC_THRESHOLD = 1.5;
+const double ASSOC_THRESHOLD = 1.8;
 const double LINE_SIZE_THRESHOLD = 1.2;
 
 uint32_t a[SIZE] alignas(8192);
