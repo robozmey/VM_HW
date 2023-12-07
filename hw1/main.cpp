@@ -11,12 +11,12 @@ const int  MIN_STRIDE = 512;
 const int  MAX_STRIDE = 1 << 16;
 const int  MAX_ASSOCIATIVITY = 32;
 
-const int  ASSOCIATIVITY_ITERATIONS = 10;
-const int  LINE_SIZE_ITERATIONS = 10;
+const int  ASSOCIATIVITY_ITERATIONS = 20;
+const int  LINE_SIZE_ITERATIONS = 20;
 
 const int MEASURE_N = 1 << 20;
 
-const double ASSOC_THRESHOLD = 1.8;
+const double ASSOC_THRESHOLD = 1.6;
 const double LINE_SIZE_THRESHOLD = 1.2;
 
 uint32_t a[SIZE] alignas(8192);
@@ -37,7 +37,7 @@ void generate_chain(int spots, int stride0) {
     }
 }
 
-long long sum = 0;
+long long trash = 0;
 
 double measure(int len) {
 
@@ -48,7 +48,7 @@ double measure(int len) {
     // Load into cache
     for (int i = 0; i < len; i++) {
         curr = a[curr];
-        sum = (curr + sum) % SIZE;
+        trash = (curr + trash) % SIZE;
     }
 
     curr = 0;
@@ -58,12 +58,15 @@ double measure(int len) {
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < count; i++) {
         curr = a[curr];
-        sum += curr;
+        trash = (curr + trash) % SIZE;
     }
     auto end = std::chrono::high_resolution_clock::now();
 
     long long res = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
     // }
+
+    if (trash == 0)
+        return double(res+1) / count;
 
     return double(res) / count;
 
