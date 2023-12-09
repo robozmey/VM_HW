@@ -76,8 +76,8 @@ double measure(int len) {
 void get_assoc_it(int& assoc, int& cache_size) {
     int str_id = 0;
 
-    std::unordered_map <long long, int> sizeCnt;
-    std::unordered_map <long long, int> minAssoc;
+    std::unordered_map <long long, int> size_count;
+    std::unordered_map <long long, int> min_assoc;
 
     for (int stride = MIN_STRIDE; stride < MAX_STRIDE; stride*=2, str_id++) {
 
@@ -100,8 +100,8 @@ void get_assoc_it(int& assoc, int& cache_size) {
             int cache_size0 = assoc0 * stride;
 
             if (k > ASSOC_THRESHOLD) {
-                sizeCnt[cache_size0]++;
-                minAssoc[cache_size0] = assoc0;
+                size_count[cache_size0]++;
+                min_assoc[cache_size0] = assoc0;
             }
 
             pre_time = time;
@@ -114,10 +114,10 @@ void get_assoc_it(int& assoc, int& cache_size) {
     assoc = -1;
     cache_size = -1;
 
-    for (auto x : sizeCnt) {
-        if (sizeCnt[cache_size] < x.second || sizeCnt[cache_size] == x.second && x.first < cache_size) {
+    for (auto x : size_count) {
+        if (size_count[cache_size] < x.second || size_count[cache_size] == x.second && x.first < cache_size) {
             cache_size = x.first;
-            assoc = minAssoc[cache_size];
+            assoc = min_assoc[cache_size];
         }
     }
 
