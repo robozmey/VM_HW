@@ -96,16 +96,12 @@ void get_assoc_it(int& assoc, int& cache_size) {
             double k = time / pre_time;
 //             std::cout << real_spots << " " << stride << " " << time << " " << k << std::endl;
 
+            int assoc0 = pre_spots;
+            int cache_size0 = assoc0 * stride;
+
             if (k > ASSOC_THRESHOLD) {
-                int assoc0 = pre_spots;
-                int cache_size0 = assoc0 * stride;
-
                 sizeCnt[cache_size0]++;
-//                if (assoc_count[assoc] == 1) {
                 minAssoc[cache_size0] = assoc0;
-//                }
-//                std::cout << k << " " << assoc << " " << cache_size << std::endl;
-
             }
 
             pre_time = time;
