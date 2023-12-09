@@ -5,6 +5,7 @@
 #include <vector>
 #include <map>
 #include <utility>
+#include <unordered_map>
 
 const int  SIZE = 1 << 23;
 const int  MIN_STRIDE = 512;
@@ -48,12 +49,10 @@ double measure(int len) {
     // Load into cache
     for (int i = 0; i < len; i++) {
         curr = a[curr];
-        trash = (curr + trash) % SIZE;
     }
+    trash ^= curr;
 
     curr = 0;
-
-    // for (int iteration = 0; iteration < ITERATIONS; iteration++) {
 
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < count; i++) {
@@ -62,8 +61,9 @@ double measure(int len) {
     }
     auto end = std::chrono::high_resolution_clock::now();
 
+    trash ^= curr;
+
     long long res = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-    // }
 
     if (trash == 0)
         return double(res+1) / count;
@@ -76,8 +76,8 @@ double measure(int len) {
 void get_assoc_it(int& assoc, int& cache_size) {
     int str_id = 0;
 
-    std::vector<int> assoc_count(MAX_ASSOCIATIVITY, 0);
-    std::vector<int> min_size(MAX_ASSOCIATIVITY, 0);
+    std::unordered_map <long long, int> sizeCnt;
+    std::unordered_map <long long, int> minAssoc;
 
     for (int stride = MIN_STRIDE; stride < MAX_STRIDE; stride*=2, str_id++) {
 
@@ -93,20 +93,17 @@ void get_assoc_it(int& assoc, int& cache_size) {
             generate_chain(real_spots, stride);
             double time = measure(real_spots);
 
-//            generate_chain(real_spots-1, stride);
-            // time += measure(real_spots-1);
-
             double k = time / pre_time;
 //             std::cout << real_spots << " " << stride << " " << time << " " << k << std::endl;
 
             if (k > ASSOC_THRESHOLD) {
-                int assoc = pre_spots;
-                int cache_size = assoc * stride;
+                int assoc0 = pre_spots;
+                int cache_size0 = assoc0 * stride;
 
-                assoc_count[assoc]++;
-                if (assoc_count[assoc] == 1) {
-                    min_size[assoc] = cache_size;
-                }
+                sizeCnt[cache_size0]++;
+//                if (assoc_count[assoc] == 1) {
+                minAssoc[cache_size0] = assoc0;
+//                }
 //                std::cout << k << " " << assoc << " " << cache_size << std::endl;
 
             }
@@ -118,15 +115,22 @@ void get_assoc_it(int& assoc, int& cache_size) {
 //        std::cout << str_id << " " << std_jumps << " " << sum.count() / spots_count * 10e11 << std::endl;
     }
 
-    assoc = 0;
-    cache_size = min_size[assoc];
+    assoc = -1;
+    cache_size = -1;
 
-    for (int i = 1; i < MAX_ASSOCIATIVITY; i++) {
-        if (assoc_count[i] > assoc_count[assoc]) {
-            assoc = i;
-            cache_size = min_size[assoc];
+    for (auto x : sizeCnt) {
+        if (sizeCnt[cache_size] < x.second || sizeCnt[cache_size] == x.second && x.first < cache_size) {
+            cache_size = x.first;
+            assoc = minAssoc[cache_size];
         }
     }
+
+//    for (int i = 1; i < MAX_ASSOCIATIVITY; i++) {
+//        if (assoc_count[assoc] < assoc_count[i] || assoc_count[assoc] == assoc_count[i] && i < assoc) {
+//            assoc = i;
+//            cache_size = min_size[assoc];
+//        }
+//    }
 
 }
 
@@ -167,11 +171,6 @@ int generate_chain_line(int assoc, int cache_size, int line_size) {
             for (int el = 0; el < line_size / sizeof(uint32_t); el++) {
                 int field_index = index * line_size;
                 int field_tag = (tag + index * assoc) * tag_offset; // + line_i * assoc * tag_offset;
-
-                //            if ((field_index | field_tag) != (field_index + field_tag)) {
-                //                std::cout << i << " " << tag << " - " << line_size << " " << tag_offset << " - " << (field_index | field_tag) << " " << (field_index + field_tag) << std::endl;
-                //                exit(1);
-                //            }
 
                 b[el + (tag + index * assoc) * line_size / sizeof(uint32_t)] = (field_index + field_tag) / sizeof(uint32_t) + el; // + line_i;
             }
