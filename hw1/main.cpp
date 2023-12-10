@@ -6,6 +6,7 @@
 #include <map>
 #include <utility>
 #include <unordered_map>
+#include <set>
 
 const int  SIZE = 1 << 23;
 const int  MIN_STRIDE = 512;
@@ -76,8 +77,8 @@ double measure(int len) {
 void get_assoc_it(int& assoc, int& cache_size) {
     int str_id = 0;
 
-    std::unordered_map <long long, int> size_count;
-    std::unordered_map <long long, int> min_assoc;
+    std::unordered_map <long long, std::set<int>> size_jumps;
+    std::unordered_map <long long, int> size_assoc;
 
     for (int stride = MIN_STRIDE; stride < MAX_STRIDE; stride*=2, str_id++) {
 
@@ -100,8 +101,12 @@ void get_assoc_it(int& assoc, int& cache_size) {
             int cache_size0 = assoc0 * stride;
 
             if (k > ASSOC_THRESHOLD) {
-                size_count[cache_size0]++;
-                min_assoc[cache_size0] = assoc0;
+                size_jumps[cache_size0].insert(assoc0);
+                size_assoc[cache_size0] = assoc0;
+
+                if (size_jumps[cache_size0 / 2].find(assoc0) != size_jumps[cache_size0 / 2].end()) {
+                    size_assoc[cache_size0 / 2] = assoc0;
+                }
             }
 
             pre_time = time;
@@ -113,11 +118,16 @@ void get_assoc_it(int& assoc, int& cache_size) {
 
     assoc = -1;
     cache_size = -1;
+    int max_jumps = -1;
 
-    for (auto x : size_count) {
-        if (size_count[cache_size] < x.second || size_count[cache_size] == x.second && x.first < cache_size) {
-            cache_size = x.first;
-            assoc = min_assoc[cache_size];
+    for (auto p : size_jumps) {
+        long long current_cache_size = p.first;
+        int current_jumps = p.second.size();
+
+        if (max_jumps < current_jumps || max_jumps == current_jumps && current_cache_size < cache_size) {
+            max_jumps = current_jumps;
+            cache_size = current_cache_size;
+            assoc = size_assoc[cache_size];
         }
     }
 
