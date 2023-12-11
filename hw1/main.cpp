@@ -29,13 +29,17 @@ std::mt19937 g(rd());
 void generate_chain(int spots, int stride0) {
     int stride = stride0 / sizeof(uint32_t);
 
-    std::vector<int> b(spots);
-    std::iota(b.begin(), b.end(), 0);
+    std::vector <int> b(spots, 0);
 
-    std::shuffle(b.begin()+1, b.end(), g);
+    a[0] = 0;
+    for (int i = 1; i < spots; i++) {
+        int next = g() % i;
+        int prev = b[next];
 
-    for (int i = 0; i < spots; i++) {
-        a[b[i % spots]*stride] = b[(i+1) % spots]*stride;
+        a[i * stride] = next * stride;
+        a[prev * stride] = i * stride;
+        b[next] = i;
+        b[i] = prev;
     }
 }
 
@@ -43,33 +47,26 @@ long long trash = 0;
 
 double measure(int len) {
 
-    int curr = 0;
+    long long sum = 0;
+    trash = 0;
 
-    int count = MEASURE_N;
-
-    // Load into cache
+    int cur = 0;
     for (int i = 0; i < len; i++) {
-        curr = a[curr];
+        trash ^= cur;
+        cur = a[cur];
     }
-    trash ^= curr;
 
-    curr = 0;
+    cur = 0;
 
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < count; i++) {
-        curr = a[curr];
-        trash = (curr + trash) % SIZE;
+    for (int i = 0; i < MEASURE_N; i++) {
+        trash ^= cur;
+        cur = a[cur];
     }
     auto end = std::chrono::high_resolution_clock::now();
+    sum += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
-    trash ^= curr;
-
-    long long res = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
-
-    if (trash == 0)
-        return double(res+1) / count;
-
-    return double(res) / count;
+    return double(sum) / MEASURE_N;
 
 }
 
