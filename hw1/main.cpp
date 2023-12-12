@@ -119,9 +119,11 @@ void get_assoc(int& assoc, int& cache_size) {
         int current_jumps = p.second.size();
 
         if (max_jumps < current_jumps || max_jumps == current_jumps && current_cache_size < cache_size) {
-            max_jumps = current_jumps;
-            cache_size = current_cache_size;
-            assoc = size_assoc[cache_size];
+            if (size_assoc.find(current_cache_size) != size_assoc.end()) {
+                max_jumps = current_jumps;
+                cache_size = current_cache_size;
+                assoc = size_assoc[cache_size];
+            }
         }
     }
 }
