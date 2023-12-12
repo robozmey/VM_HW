@@ -12,8 +12,6 @@ const int  SIZE = 1 << 23;
 const int  MIN_STRIDE = 512;
 const int  MAX_STRIDE = 1 << 16;
 const int  MAX_ASSOCIATIVITY = 32;
-const int  MIN_CACHE_SIZE = 1 << 13;
-const int  MAX_CACHE_SIZE = 1 << 17;
 
 const int  ASSOCIATIVITY_ITERATIONS = 20;
 const int  LINE_SIZE_ITERATIONS = 20;
@@ -82,7 +80,9 @@ void get_assoc_it(int& assoc, int& cache_size) {
     for (int stride = MIN_STRIDE; stride < MAX_STRIDE; stride*=2, str_id++) {
 
         double pre_time = -1;
+
         int pre_spots = 1;
+
         for (int spots = 0; spots < MAX_ASSOCIATIVITY; spots+=2) {
             int real_spots = spots;
             if (real_spots == 0)
@@ -90,13 +90,16 @@ void get_assoc_it(int& assoc, int& cache_size) {
 
             generate_chain(real_spots, stride);
             double time = measure(real_spots);
+
             double k = time / pre_time;
+//             std::cout << real_spots << " " << stride << " " << time << " " << k << std::endl;
 
             int assoc0 = pre_spots;
             int cache_size0 = assoc0 * stride;
 
-            if (k > ASSOC_THRESHOLD && cache_size0 >= MIN_CACHE_SIZE && cache_size0 <= MAX_CACHE_SIZE) {
+            if (k > ASSOC_THRESHOLD) {
                 size_jumps[cache_size0].insert(assoc0);
+                size_assoc[cache_size0] = assoc0;
 
                 if (size_jumps[cache_size0 / 2].find(assoc0) != size_jumps[cache_size0 / 2].end()) {
                     size_assoc[cache_size0 / 2] = assoc0;
