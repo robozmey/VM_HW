@@ -188,9 +188,6 @@ int get_line_size_it(int assoc, int cache_size) {
 
     double pre_time = -1;
 
-    double max_k = -1;
-    int max_line_size = -1;
-
     for (int line_size = 8; line_size <= cache_size / assoc; line_size*=2) {
 
         int spots = generate_chain_line(assoc, cache_size, line_size);
@@ -198,26 +195,13 @@ int get_line_size_it(int assoc, int cache_size) {
 
         double k = pre_time / time;
 
-        // std::cout << spots << " " << line_size << " " << time << " " << k << std::endl;
-
-        if (k > max_k) {
-            max_k = k;
-            max_line_size = line_size * sizeof(uint32_t);
-        }
-
         if (k > LINE_SIZE_THRESHOLD) {
-//            std::cout << max_k << " " << max_line_size << std::endl;
             return line_size * sizeof(uint32_t);
         }
 
         pre_time = time;
-
-//        std::cout << str_id << " " << std_jumps << " " << sum.count() / spots_count * 10e11 << std::endl;
     }
 
-//    std::cout << max_k << " " << max_line_size << std::endl;
-
-    return max_line_size;
     return -1;
 }
 
