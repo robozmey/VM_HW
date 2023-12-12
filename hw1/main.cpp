@@ -50,19 +50,20 @@ double measure(int len) {
     long long sum = 0;
     trash = 0;
 
+    // fill cache
     int cur = 0;
     for (int i = 0; i < len; i++) {
-        trash ^= cur;
         cur = a[cur];
     }
+    trash ^= cur;
 
     cur = 0;
 
     auto start = std::chrono::high_resolution_clock::now();
     for (int i = 0; i < MEASURE_N; i++) {
-        trash ^= cur;
         cur = a[cur];
     }
+    trash ^= cur;
     auto end = std::chrono::high_resolution_clock::now();
     sum += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
@@ -71,7 +72,7 @@ double measure(int len) {
 }
 
 
-void get_assoc_it(int& assoc, int& cache_size) {
+void get_assoc(int& assoc, int& cache_size) {
     int str_id = 0;
 
     std::unordered_map <long long, std::set<int>> size_jumps;
@@ -92,14 +93,12 @@ void get_assoc_it(int& assoc, int& cache_size) {
             double time = measure(real_spots);
 
             double k = time / pre_time;
-//             std::cout << real_spots << " " << stride << " " << time << " " << k << std::endl;
 
             int assoc0 = pre_spots;
             int cache_size0 = assoc0 * stride;
 
             if (k > ASSOC_THRESHOLD) {
                 size_jumps[cache_size0].insert(assoc0);
-                size_assoc[cache_size0] = assoc0;
 
                 if (size_jumps[cache_size0 / 2].find(assoc0) != size_jumps[cache_size0 / 2].end()) {
                     size_assoc[cache_size0 / 2] = assoc0;
@@ -109,8 +108,6 @@ void get_assoc_it(int& assoc, int& cache_size) {
             pre_time = time;
             pre_spots = real_spots;
         }
-
-//        std::cout << str_id << " " << std_jumps << " " << sum.count() / spots_count * 10e11 << std::endl;
     }
 
     assoc = -1;
@@ -127,38 +124,8 @@ void get_assoc_it(int& assoc, int& cache_size) {
             assoc = size_assoc[cache_size];
         }
     }
-
-//    for (int i = 1; i < MAX_ASSOCIATIVITY; i++) {
-//        if (assoc_count[assoc] < assoc_count[i] || assoc_count[assoc] == assoc_count[i] && i < assoc) {
-//            assoc = i;
-//            cache_size = min_size[assoc];
-//        }
-//    }
-
 }
 
-void get_assoc(int& assoc, int& cache_size) {
-
-    std::map<std::pair<int, int>, int> mp;
-
-    for (int i = 0; i < ASSOCIATIVITY_ITERATIONS; i++) {
-        get_assoc_it(assoc, cache_size);
-        mp[{assoc, cache_size}]++;
-    }
-
-    assoc = 0;
-    cache_size = 0;
-    int mx = 0;
-    for (auto [p, c] : mp) {
-//        std::cout << p.first  << " " << p.second << " - " << c << std::endl;
-        if (c > mx) {
-            mx = c;
-            assoc = p.first;
-            cache_size = p.second;
-        }
-    }
-
-}
 
 int generate_chain_line(int assoc, int cache_size, int line_size) {
 
@@ -191,12 +158,9 @@ int generate_chain_line(int assoc, int cache_size, int line_size) {
     return spots;
 }
 
-int get_line_size_it(int assoc, int cache_size) {
+int get_line_size(int assoc, int cache_size) {
 
     double pre_time = -1;
-
-    double max_k = -1;
-    int max_line_size = -1;
 
     for (int line_size = 8; line_size <= cache_size / assoc; line_size*=2) {
 
@@ -205,50 +169,16 @@ int get_line_size_it(int assoc, int cache_size) {
 
         double k = pre_time / time;
 
-        // std::cout << spots << " " << line_size << " " << time << " " << k << std::endl;
-
-        if (k > max_k) {
-            max_k = k;
-            max_line_size = line_size * sizeof(uint32_t);
-        }
 
         if (k > LINE_SIZE_THRESHOLD) {
-//            std::cout << max_k << " " << max_line_size << std::endl;
             return line_size * sizeof(uint32_t);
         }
 
         pre_time = time;
-
-//        std::cout << str_id << " " << std_jumps << " " << sum.count() / spots_count * 10e11 << std::endl;
     }
 
-//    std::cout << max_k << " " << max_line_size << std::endl;
-
-    return max_line_size;
     return -1;
 }
-
-int get_line_size(int assoc, int cache_size) {
-
-    std::map<int, int> mp;
-
-    for (int i = 0; i < LINE_SIZE_ITERATIONS; i++) {
-        mp[get_line_size_it(assoc, cache_size)]++;
-    }
-
-    int mx = 0;
-    int line_size = 0;
-    for (auto [l, c] : mp) {
-//        std::cout << l << " " << c << std::endl;
-        if (c > mx && l != -1) {
-            mx = c;
-            line_size = l;
-        }
-    }
-    return line_size;
-}
-
-
 
 
 int main() {
