@@ -6,11 +6,11 @@
 #include <map>
 #include <utility>
 #include <unordered_map>
-#include <set>
 
 const int  SIZE = 1 << 23;
-const int  MIN_STRIDE = 512;
+const int  MIN_STRIDE = 1 << 10;
 const int  MAX_STRIDE = 1 << 16;
+const int  MIN_ASSOCIATIVITY = 4;
 const int  MAX_ASSOCIATIVITY = 32;
 
 const int  ASSOCIATIVITY_ITERATIONS = 20;
@@ -18,7 +18,7 @@ const int  LINE_SIZE_ITERATIONS = 20;
 
 const int MEASURE_N = 1 << 20;
 
-const double ASSOC_THRESHOLD = 1.6;
+const double ASSOC_THRESHOLD = 1.2;
 const double LINE_SIZE_THRESHOLD = 1.2;
 
 uint32_t a[SIZE] alignas(8192);
@@ -29,17 +29,13 @@ std::mt19937 g(rd());
 void generate_chain(int spots, int stride0) {
     int stride = stride0 / sizeof(uint32_t);
 
-    std::vector <int> b(spots, 0);
+    std::vector<int> b(spots);
+    std::iota(b.begin(), b.end(), 0);
 
-    a[0] = 0;
-    for (int i = 1; i < spots; i++) {
-        int next = g() % i;
-        int prev = b[next];
+    std::shuffle(b.begin()+1, b.end(), g);
 
-        a[i * stride] = next * stride;
-        a[prev * stride] = i * stride;
-        b[next] = i;
-        b[i] = prev;
+    for (int i = 0; i < spots; i++) {
+        a[b[i % spots]*stride] = b[(i+1) % spots]*stride;
     }
 }
 
@@ -47,26 +43,31 @@ long long trash = 0;
 
 double measure(int len) {
 
-    long long sum = 0;
-    trash = 0;
+    int curr = 0;
 
-    int cur = 0;
+    int count = MEASURE_N;
+
+    // Load into cache
     for (int i = 0; i < len; i++) {
-        cur = a[cur];
+        curr = a[curr];
     }
-    trash ^= cur;
+    trash ^= curr;
 
-    cur = 0;
-
+    curr = 0;
     auto start = std::chrono::high_resolution_clock::now();
-    for (int i = 0; i < MEASURE_N; i++) {
-        cur = a[cur];
+    for (int i = 0; i < count; i++) {
+        curr = a[curr];
     }
-    trash ^= cur;
     auto end = std::chrono::high_resolution_clock::now();
-    sum += std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
 
-    return double(sum) / MEASURE_N;
+    trash ^= curr;
+
+    long long res = std::chrono::duration_cast<std::chrono::nanoseconds>(end - start).count();
+
+    if (trash == 0)
+        return double(res+1) / count;
+
+    return double(res) / count;
 
 }
 
@@ -74,8 +75,8 @@ double measure(int len) {
 void get_assoc_it(int& assoc, int& cache_size) {
     int str_id = 0;
 
-    std::unordered_map <long long, std::set<int>> size_jumps;
-    std::unordered_map <long long, int> size_assoc;
+    std::unordered_map <long long, int> size_count;
+    std::unordered_map <long long, int> min_assoc;
 
     for (int stride = MIN_STRIDE; stride < MAX_STRIDE; stride*=2, str_id++) {
 
@@ -83,7 +84,7 @@ void get_assoc_it(int& assoc, int& cache_size) {
 
         int pre_spots = 1;
 
-        for (int spots = 0; spots < MAX_ASSOCIATIVITY; spots+=2) {
+        for (int spots = MIN_ASSOCIATIVITY; spots < MAX_ASSOCIATIVITY; spots+=2) {
             int real_spots = spots;
             if (real_spots == 0)
                 real_spots = 1;
@@ -97,12 +98,8 @@ void get_assoc_it(int& assoc, int& cache_size) {
             int cache_size0 = assoc0 * stride;
 
             if (k > ASSOC_THRESHOLD) {
-                size_jumps[cache_size0].insert(assoc0);
-                size_assoc[cache_size0] = assoc0;
-
-                if (size_jumps[cache_size0 / 2].find(assoc0) != size_jumps[cache_size0 / 2].end()) {
-                    size_assoc[cache_size0 / 2] = assoc0;
-                }
+                size_count[cache_size0]++;
+                min_assoc[cache_size0] = assoc0;
             }
 
             pre_time = time;
@@ -112,22 +109,13 @@ void get_assoc_it(int& assoc, int& cache_size) {
 
     assoc = -1;
     cache_size = -1;
-    int max_jumps = -1;
 
-    for (auto p : size_jumps) {
-        long long current_cache_size = p.first;
-        int current_jumps = p.second.size();
-
-        if (max_jumps < current_jumps || max_jumps == current_jumps && current_cache_size < cache_size) {
-            if (size_assoc.find(current_cache_size) != size_assoc.end()) {
-                max_jumps = current_jumps;
-                cache_size = current_cache_size;
-                assoc = size_assoc[cache_size];
-            }
+    for (auto x : size_count) {
+        if (size_count[cache_size] < x.second || size_count[cache_size] == x.second && x.first < cache_size) {
+            cache_size = x.first;
+            assoc = min_assoc[cache_size];
         }
     }
-
-
 }
 
 void get_assoc(int& assoc, int& cache_size) {
@@ -200,6 +188,7 @@ int get_line_size_it(int assoc, int cache_size) {
         }
 
         pre_time = time;
+
     }
 
     return -1;
