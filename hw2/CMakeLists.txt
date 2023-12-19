@@ -7,5 +7,5 @@ include_directories(include)
 
 add_executable(VM_HW src/main.cpp
         src/runtime.c
-        src/bytefile.c
+        src/bytefile.cpp
         src/interpreter.cpp)

@@ -6,8 +6,10 @@
 #define VM_HW2_INTERPRETER
 
 #include "bytefile.h"
+#include <string>
+#include <vector>
 
-#define MAX_STACK_SIZE 1024
+#define MAX_STACK_SIZE (1 << 20)
 
 class variable {
 public:
@@ -19,11 +21,11 @@ public:
 };
 
 
-class interpreter {
+class interpretator {
 
-    int32_t *&stack_top;
-    int32_t *&stack_bottom;
-    int32_t *&stack_size;
+//    int32_t *&stack_top;
+//    int32_t *&stack_bottom;
+//    int32_t *&stack_size;
     int32_t *fp;
 
     bytefile *bf;
@@ -50,7 +52,7 @@ class interpreter {
     int32_t& get_var(variable& var);
 
 
-    void eval_binop(std::string op);
+    void eval_binop(int op);
     void eval_const(int32_t value);
     void eval_string(int32_t offset);
     void eval_sexp(char* name, int n);
@@ -73,7 +75,7 @@ class interpreter {
     void eval_closure(int addr, std::vector<variable> vars);
     void eval_call(int32_t addr, int32_t nargs);
     void eval_callc(int32_t nargs);
-    void eval_tag(int32_t* name, int32_t n);
+    void eval_tag(char* name, int32_t n);
     void eval_array(int32_t n);
     void eval_fail(char h, char l);
     void eval_line();
@@ -85,9 +87,8 @@ class interpreter {
     void eval_barray();
 
 public:
-    interpreter(bytefile* bf) : bf(bf) {
+    interpretator(bytefile* bf) : bf(bf) {
         ip = bf->code_ptr;
-        fp = stack_bottom = stack_top = (new int32_t[MAX_STACK_SIZE]) + MAX_STACK_SIZE;
     }
 
     void intepretate();

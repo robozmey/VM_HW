@@ -4,6 +4,8 @@
 
 #include "runtime.h"
 
+#include <stdbool.h>
+
 #include "gc.h"
 #include "runtime_common.h"
 
