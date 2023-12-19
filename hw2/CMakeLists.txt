@@ -5,7 +5,7 @@ set(CMAKE_CXX_STANDARD 17)
 
 include_directories(include)
 
-add_executable(VM_HW main.cpp
-        runtime.c
-        bytefile.c
-        interpreter.cpp)
+add_executable(VM_HW src/main.cpp
+        src/runtime.c
+        src/bytefile.c
+        src/interpreter.cpp)

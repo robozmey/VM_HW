@@ -2,17 +2,64 @@
 // Created by vladimir on 08.12.23.
 //
 
+#include <string>
 #include "interpreter.h"
 #include "bytefile.h"
 
-void interpreter::eval_binop() {}
+int32_t box(int32_t value) {
+    return (value << 1) | 1;
+}
 
-void interpreter::eval_const() {}
+int32_t unbox(int32_t value) {
+    return value >> 1;
+}
+
+bool is_boxed(int32_t value) {
+    return value & 1;
+}
+
+// bf
+char interpreter::get_byte() {
+    return *ip++;
+}
+
+int32_t interpreter::get_int() {
+    return (ip += sizeof (int32_t), *(int32_t*)(ip - sizeof (int32_t)));
+}
+
+char* interpreter::get_string() {
+    return get_string(bf, get_int());
+}
+
+// stack
+void interpreter::push(int32_t value) {
+    if (stack_bottom == stack_top - MAX_STACK_SIZE) {
+        failure("Stack limit exceeded");
+    }
+    *(--stack_bottom) = value;
+}
+
+int32_t interpreter::pop() {
+    return *(stack_bottom++);
+}
+
+int32_t* interpreter::get_stack_bottom() {
+    return stack_bottom;
+}
+
+
+
+void interpreter::eval_binop(std::string op) {
+
+}
+void interpreter::eval_const() {
+    push()
+}
 void interpreter::eval_string() {}
 void interpreter::eval_sexp() {}
 void interpreter::eval_sti() {}
 void interpreter::eval_sta() {}
-void interpreter::eval_jump() {}
+void interpreter::eval_jmp() {}
 void interpreter::eval_end() {}
 void interpreter::eval_ret() {}
 void interpreter::eval_drop() {}
@@ -40,14 +87,13 @@ void interpreter::eval_lwrite() {}
 void interpreter::eval_llength() {}
 void interpreter::eval_lstring() {}
 void interpreter::eval_larray() {}
-void interpreter::eval() {
+void interpreter::intepretate() {
 
 # define INT    (ip += sizeof (int), *(int*)(ip - sizeof (int)))
 # define BYTE   *ip++
 # define STRING get_string (bf, INT)
 # define FAIL   failure ("ERROR: invalid opcode %d-%d\n", h, l)
 
-    char *ip     = bf->code_ptr;
     char *ops [] = {"+", "-", "*", "/", "%", "<", "<=", ">", ">=", "==", "!=", "&&", "!!"};
     char *pats[] = {"=str", "#string", "#array", "#sexp", "#ref", "#val", "#fun"};
     char *lds [] = {"LD", "LDA", "ST"};
@@ -65,61 +111,61 @@ void interpreter::eval() {
                 /* BINOP */
             case 0:
                 fprintf (f, "BINOP\t%s", ops[l-1]);
+                eval_binop(ops[l-1]);
                 break;
 
             case 1:
                 switch (l) {
                     case  0:
-                        fprintf (f, "CONST\t%d", INT);
+                        eval_const();
                         break;
 
                     case  1:
-                        fprintf (f, "STRING\t%s", STRING);
+                        eval_string();
                         break;
 
                     case  2:
-                        fprintf (f, "SEXP\t%s ", STRING);
-                        fprintf (f, "%d", INT);
+                        eval_sexp();
                         break;
 
                     case  3:
-                        fprintf (f, "STI");
+                        eval_sti();
                         break;
 
                     case  4:
-                        fprintf (f, "STA");
+                        eval_sta();
                         break;
 
                     case  5:
-                        fprintf (f, "JMP\t0x%.8x", INT);
+                        eval_jmp();
                         break;
 
                     case  6:
-                        fprintf (f, "END");
+                        eval_end();
                         break;
 
                     case  7:
-                        fprintf (f, "RET");
+                        eval_ret();
                         break;
 
                     case  8:
-                        fprintf (f, "DROP");
+                        eval_drop()
                         break;
 
                     case  9:
-                        fprintf (f, "DUP");
+                        eval_dup();
                         break;
 
                     case 10:
-                        fprintf (f, "SWAP");
+                        eval_swap();
                         break;
 
                     case 11:
-                        fprintf (f, "ELEM");
+                        eval_elem();
                         break;
 
                     default:
-                        FAIL;
+                        fail();
                 }
                 break;
 
@@ -139,25 +185,23 @@ void interpreter::eval() {
             case 5:
                 switch (l) {
                     case  0:
-                        fprintf (f, "CJMPz\t0x%.8x", INT);
+                        eval_cjmpz();
                         break;
 
                     case  1:
-                        fprintf (f, "CJMPnz\t0x%.8x", INT);
+                        eval_cjmpz();
                         break;
 
                     case  2:
-                        fprintf (f, "BEGIN\t%d ", INT);
-                        fprintf (f, "%d", INT);
+                        eval_begin();
                         break;
 
                     case  3:
-                        fprintf (f, "CBEGIN\t%d ", INT);
-                        fprintf (f, "%d", INT);
+                        eval_cbegin();
                         break;
 
                     case  4:
-                        fprintf (f, "CLOSURE\t0x%.8x", INT);
+                        eval_closure();
                         {int n = INT;
                             for (int i = 0; i<n; i++) {
                                 switch (BYTE) {
@@ -172,61 +216,58 @@ void interpreter::eval() {
                         break;
 
                     case  5:
-                        fprintf (f, "CALLC\t%d", INT);
+                        eval_callc();
                         break;
 
                     case  6:
-                        fprintf (f, "CALL\t0x%.8x ", INT);
-                        fprintf (f, "%d", INT);
+                        eval_call();
                         break;
 
                     case  7:
-                        fprintf (f, "TAG\t%s ", STRING);
-                        fprintf (f, "%d", INT);
+                        eval_tag();
                         break;
 
                     case  8:
-                        fprintf (f, "ARRAY\t%d", INT);
+                        eval_array();
                         break;
 
                     case  9:
-                        fprintf (f, "FAIL\t%d", INT);
-                        fprintf (f, "%d", INT);
+                        eval_fail();
                         break;
 
                     case 10:
-                        fprintf (f, "LINE\t%d", INT);
+                        eval_line();
                         break;
 
                     default:
-                        FAIL;
+                        fail();
                 }
                 break;
 
             case 6:
-                fprintf (f, "PATT\t%s", pats[l]);
+                eval_patt(l);
                 break;
 
             case 7: {
                 switch (l) {
                     case 0:
-                        fprintf (f, "CALL\tLread");
+                        eval_read();
                         break;
 
                     case 1:
-                        fprintf (f, "CALL\tLwrite");
+                        eval_write();
                         break;
 
                     case 2:
-                        fprintf (f, "CALL\tLlength");
+                        eval_length();
                         break;
 
                     case 3:
-                        fprintf (f, "CALL\tLstring");
+                        eval_lstring();
                         break;
 
                     case 4:
-                        fprintf (f, "CALL\tBarray\t%d", INT);
+                        eval_barray();
                         break;
 
                     default:
