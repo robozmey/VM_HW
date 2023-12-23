@@ -1,6 +1,7 @@
 //
 // Created by vladimir on 08.12.23.
 //
+#pragma once
 
 #ifndef VM_HW2_INTERPRETER
 #define VM_HW2_INTERPRETER

@@ -9,14 +9,14 @@ build/main.o: build src/main.cpp
 build/interpretator.o: build src/interpretator.cpp
 	$(CXX) -O3 -std=c++20 -I include -I include -g -fstack-protector-all -m32 -c src/interpretator.cpp -o build/interpretator.o
 
-build/bytefile.o: build src/bytefile.cpp
-	$(CXX) -O3 -w -I include -I 3rd-party/include -g -fstack-protector-all -m32 -c src/bytefile.cpp -o build/bytefile.o
+build/bytefile.o: build src/bytefile.c
+	$(CXX) -O3 -w -I include -I include -g -fstack-protector-all -m32 -c src/bytefile.c -o build/bytefile.o
 
 build/gc_runtime.o: build src/gc_runtime.s
-	$(CC) -O3 -w -I src/include -g -fstack-protector-all -m32 -c 3rd-party/src/gc_runtime.s -o build/gc_runtime.o
+	$(CC) -O3 -w -I src/include -g -fstack-protector-all -m32 -c src/gc_runtime.s -o build/gc_runtime.o
 
 build/runtime.o: build src/runtime.c
-	$(CC) -O3 -w -I include -I include -g -fstack-protector-all -m32 -c 3rd-party/src/runtime.c -o build/runtime.o
+	$(CC) -O3 -w -I include -I include -g -fstack-protector-all -m32 -c src/runtime.c -o build/runtime.o
 
 build:
 	@mkdir -p build

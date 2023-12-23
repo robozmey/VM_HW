@@ -1,5 +1,7 @@
-/* Lama SM Bytecode interpreter */
 #pragma once
+
+#ifndef VM_HW2_BYTEFILE
+#define VM_HW2_BYTEFILE
 
 # include <string.h>
 # include <stdio.h>
@@ -7,9 +9,6 @@
 # include <malloc.h>
 
 # include "runtime.h"
-
-void *__start_custom_data;
-void *__stop_custom_data;
 
 /* The unpacked representation of bytecode file */
 typedef struct {
@@ -35,19 +34,4 @@ int get_public_offset (bytefile *f, int i);
 /* Reads a binary bytecode file by name and unpacks it */
 bytefile* read_file (char *fname);
 
-
-///* Dumps the contents of the file */
-//void dump_file (FILE *f, bytefile *bf) {
-//    int i;
-//
-//    fprintf (f, "String table size       : %d\n", bf->stringtab_size);
-//    fprintf (f, "Global area size        : %d\n", bf->global_area_size);
-//    fprintf (f, "Number of public symbols: %d\n", bf->public_symbols_number);
-//    fprintf (f, "Public symbols          :\n");
-//
-//    for (i=0; i < bf->public_symbols_number; i++)
-//        fprintf (f, "   0x%.8x: %s\n", bytefile_get_public_offset (bf, i), bytefile_get_public_name (bf, i));
-//
-//    fprintf (f, "Code:\n");
-//    disassemble (f, bf);
-//}
+#endif

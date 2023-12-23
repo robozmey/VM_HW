@@ -1,6 +1,7 @@
 #include "interpretator.h"
-#include "bytefile.h"
 extern "C" {
+    #include "runtime.h"
+    #include "bytefile.h"
     extern void __init(void);
 }
 extern int32_t *__gc_stack_top, *__gc_stack_bottom;

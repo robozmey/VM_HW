@@ -4,10 +4,10 @@
 # include <stdio.h>
 # include <errno.h>
 # include <malloc.h>
+#include "runtime.h"
 
-extern "C" {
-    #include "runtime.h"
-}
+void *__start_custom_data;
+void *__stop_custom_data;
 
 char* get_string (bytefile *f, int pos) {
     return &f->string_ptr[pos];

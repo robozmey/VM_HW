@@ -2,6 +2,8 @@
 // Created by vladimir on 08.12.23.
 //
 
+#pragma once
+
 #ifndef VM_HW2_RUNTIME_COMMON
 #define VM_HW2_RUNTIME_COMMON
 

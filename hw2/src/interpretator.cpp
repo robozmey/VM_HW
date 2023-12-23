@@ -58,9 +58,9 @@ std::string variable::str() {
     }
 }
 
-char *ops [] = {"+", "-", "*", "/", "%", "<", "<=", ">", ">=", "==", "!=", "&&", "!!"};
-char *pats[] = {"=str", "#string", "#array", "#sexp", "#ref", "#val", "#fun"};
-char *lds [] = {"LD", "LDA", "ST"};
+std::string ops [13] = {"+", "-", "*", "/", "%", "<", "<=", ">", ">=", "==", "!=", "&&", "!!"};
+std::string pats[7] = {"=str", "#string", "#array", "#sexp", "#ref", "#val", "#fun"};
+std::string lds [3] = {"LD", "LDA", "ST"};
 const static std::vector<std::function<int32_t(int32_t, int32_t)>> ops_table {
         [](int x, int y) { return x + y; },
         [](int x, int y) { return x - y; },
@@ -115,11 +115,6 @@ int32_t& interpretator::get_var(variable& var) {
     }
 }
 
-# define INT    (ip += sizeof (int), *(int*)(ip - sizeof (int)))
-# define BYTE   *ip++
-# define STRING get_string (bf, INT)
-# define FAIL   failure ("ERROR: invalid opcode %d-%d\n", h, l)
-
 void interpretator::eval_binop(int op) {
     int32_t x = unbox(pop());
     int32_t y = unbox(pop());
@@ -131,7 +126,7 @@ void interpretator::eval_const(int32_t value) {
     push(box(value));
 }
 void interpretator::eval_string(int32_t offset) {
-    push(reinterpret_cast<int32_t>(Bstring(bf->string_ptr + offset)));
+    push(reinterpret_cast<int64_t>(Bstring(bf->string_ptr + offset)));
 }
 void interpretator::eval_sexp(char* name, int n) {
     int32_t* arr = new int32_t[n + 1];
@@ -139,7 +134,7 @@ void interpretator::eval_sexp(char* name, int n) {
         arr[n - 1 - i] = pop();
     }
     arr[n] = LtagHash(name);
-    push(reinterpret_cast<int32_t>(Bsexp_(box(n + 1), reinterpret_cast<void*>(arr))));
+    push(reinterpret_cast<int64_t>(Bsexp_(box(n + 1), reinterpret_cast<void*>(arr))));
     delete[] arr;
 }
 //void interpreter::eval_sti() {}
@@ -161,14 +156,14 @@ void interpretator::eval_dup() {
 void interpretator::eval_elem() {
     int32_t elem = pop();
     void* sexp = reinterpret_cast<void*>(pop());
-    push(reinterpret_cast<int32_t>(Belem(sexp, elem)));
+    push(reinterpret_cast<int64_t>(Belem(sexp, elem)));
 }
 void interpretator::eval_ld(variable& var) {
     int32_t& val = get_var(var);
     push(val);
 }
 void interpretator::eval_lda(variable& var) {
-    push(reinterpret_cast<int32_t>(&(get_var(var))));
+    push(reinterpret_cast<int64_t>(&(get_var(var))));
 }
 void interpretator::eval_st(variable& var) {
     int32_t rval = top();
@@ -196,12 +191,12 @@ void interpretator::eval_closure(int addr, std::vector<variable> vars) {
     for (int i = 0; i < vars.size(); i++) {
         arr[i] = get_var(vars[i]);
     }
-    push(reinterpret_cast<int32_t>(Bclosure(box(vars.size()), reinterpret_cast<void*>(bf->code_ptr + addr), arr)));
+    push(reinterpret_cast<int64_t>(Bclosure(box(vars.size()), reinterpret_cast<void*>(bf->code_ptr + addr), arr)));
     delete[] arr;
 }
 void interpretator::eval_call(int32_t addr, int32_t nargs) {
     reverse(nargs);
-    push(reinterpret_cast<int32_t>(ip));
+    push(reinterpret_cast<int64_t>(ip));
     push(nargs);
     ip = bf->code_ptr + addr;
 }
@@ -209,7 +204,7 @@ void interpretator::eval_callc(int32_t nargs) {
     int32_t closure = top(nargs);
 
     reverse(nargs);
-    push(reinterpret_cast<int32_t>(ip));
+    push(reinterpret_cast<int64_t>(ip));
     push(nargs + 1);
     ip = reinterpret_cast<char*>(Belem(reinterpret_cast<void*>(closure), box(0)));
 }
@@ -275,16 +270,16 @@ void interpretator::eval_llength() {
     push(length);
 }
 void interpretator::eval_lstring() {
-    push(reinterpret_cast<int32_t>(Lstring(reinterpret_cast<void*>(pop()))));
+    push(reinterpret_cast<int64_t>(Lstring(reinterpret_cast<void*>(pop()))));
 }
 void interpretator::eval_barray() {
-    int32_t n = INT;
+    int32_t n = get_int();
     int32_t* arr = new int32_t[n];
     for (int i = 0; i < n; i++) {
         arr[n - 1 - i] = pop();
     }
 
-    push(reinterpret_cast<int32_t>(Barray(box(n), arr)));
+    push(reinterpret_cast<int64_t>(Barray(box(n), arr)));
     delete[] arr;
 }
 static void not_impl() {
@@ -293,7 +288,7 @@ static void not_impl() {
 
 void interpretator::intepretate() {
     do {
-        char x = BYTE,
+        char x = get_byte(),
                 h = (x & 0xF0) >> 4,
                 l = x & 0x0F;
 
@@ -318,7 +313,7 @@ void interpretator::intepretate() {
                         break;
 
                     case  2:
-                        eval_sexp(get_string(), INT);
+                        eval_sexp(get_string(), get_int());
                         break;
 
                     case  3: // notimpl
@@ -330,7 +325,7 @@ void interpretator::intepretate() {
                         break;
 
                     case  5:
-                        eval_jmp(INT);
+                        eval_jmp(get_int());
                         break;
 
                     case  6:
@@ -494,13 +489,16 @@ void interpretator::intepretate() {
 
 // stack
 void interpretator::push(int32_t value) {
-    if (stack_bottom == stack_top - MAX_STACK_SIZE) {
-        failure("Stack limit exceeded");
+    if (stack_bottom == stack_top - stack_size) {
+        throw new std::runtime_error("Pushing on full stack exceeded");
     }
     *(--stack_bottom) = value;
 }
 
 int32_t interpretator::pop() {
+    if (stack_bottom == stack_top) {
+        throw new std::runtime_error("Popping empty stack exceeded");
+    }
     return *(stack_bottom++);
 }
 
@@ -509,15 +507,19 @@ int32_t interpretator::top() {
 }
 
 int32_t interpretator::top(int i) {
-    if (cur_size() <= i) [[unlikely]]
-                throw new std::runtime_error("get top " + std::to_string(i) + " element when stack size " + std::to_string(cur_size()));
+    if (cur_size() <= i) {
+        throw new std::runtime_error(
+                "get top " + std::to_string(i) + " element when stack size " + std::to_string(cur_size()));
+    }
 
     return *(stack_bottom + i);
 }
 
 void interpretator::allocate(int n) {
-    if (stack_size - cur_size() < n) [[unlikely]]
-                throw new std::runtime_error("allocate " + std::to_string(n) + " elements when free stack space is " + std::to_string(stack_size - cur_size()));
+    if (stack_size - cur_size() < n) {
+        throw new std::runtime_error("allocate " + std::to_string(n) + " elements when free stack space is " +
+                                     std::to_string(stack_size - cur_size()));
+    }
 
     stack_bottom -= n;
 }
@@ -530,7 +532,7 @@ void interpretator::drop(int n) {
 }
 
 void interpretator::prologue(int32_t nlocals) {
-    push(reinterpret_cast<int32_t>(fp));
+    push(reinterpret_cast<int64_t>(fp));
     fp = stack_bottom;
     allocate(nlocals);
 }

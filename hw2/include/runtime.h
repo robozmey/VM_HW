@@ -1,24 +1,21 @@
-//
-// Created by vladimir on 08.12.23.
-//
+# ifndef __LAMA_RUNTIME__
+# define __LAMA_RUNTIME__
 
-#ifndef VM_HW2_RUNTIME
-#define VM_HW2_RUNTIME
+# include <stdio.h>
+# include <stdio.h>
+# include <string.h>
+# include <stdarg.h>
+# include <stdlib.h>
+# include <sys/mman.h>
+# include <assert.h>
+# include <errno.h>
+# include <regex.h>
+# include <time.h>
+# include <limits.h>
+# include <ctype.h>
 
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <limits.h>
-#include <regex.h>
-#include <stdarg.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <sys/mman.h>
-#include <time.h>
+# define WORD_SIZE (CHAR_BIT * sizeof(int))
 
-#define WORD_SIZE (CHAR_BIT * sizeof(int))
+void failure(char *s, ...);
 
-void failure (char *s, ...);
-
-#endif //VM_HW2_RUNTIME
+# endif
