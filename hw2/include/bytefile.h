@@ -1,14 +1,8 @@
+/* Lama SM Bytecode interpreter */
 #pragma once
 
-#ifndef VM_HW2_BYTEFILE
-#define VM_HW2_BYTEFILE
+#include "runtime.h"
 
-# include <string.h>
-# include <stdio.h>
-# include <errno.h>
-# include <malloc.h>
-
-# include "runtime.h"
 
 /* The unpacked representation of bytecode file */
 typedef struct {
@@ -23,15 +17,13 @@ typedef struct {
 } bytefile;
 
 /* Gets a string from a string table by an index */
-char* get_string (bytefile *f, int pos);
+char* get_string(bytefile *f, int pos);
 
 /* Gets a name for a public symbol */
-char* get_public_name (bytefile *f, int i);
+char* get_public_name(bytefile *f, int i);
 
 /* Gets an offset for a publie symbol */
-int get_public_offset (bytefile *f, int i);
+int get_public_offset(bytefile *f, int i);
 
 /* Reads a binary bytecode file by name and unpacks it */
-bytefile* read_file (char *fname);
-
-#endif
+bytefile* read_file(char *fname);

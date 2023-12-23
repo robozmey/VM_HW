@@ -287,7 +287,9 @@ static void not_impl() {
 }
 
 void interpretator::intepretate() {
+    int pos = 0;
     do {
+        pos++;
         char x = get_byte(),
                 h = (x & 0xF0) >> 4,
                 l = x & 0x0F;
@@ -480,9 +482,8 @@ void interpretator::intepretate() {
             default:
                 eval_fail(h, l);
         }
-
     }
-    while (1);
+    while (ip != nullptr);
 
     stop: return;
 }
@@ -585,3 +586,8 @@ int32_t interpretator::cur_size() {
     return stack_top - stack_bottom;
 }
 
+interpretator::interpretator(bytefile* bf) : bf(bf) {
+    push(reinterpret_cast<int32_t>((char *)nullptr));
+    push(0);
+    ip = bf->code_ptr;
+}

@@ -4,49 +4,63 @@
 # include <stdio.h>
 # include <errno.h>
 # include <malloc.h>
+
+//extern "C" {
 #include "runtime.h"
+//}
+
+static void vfailure (char *s, va_list args) {
+    fflush   (stdout);
+    fprintf  (stderr, "*** FAILURE: ");
+    vfprintf (stderr, s, args); // vprintf (char *, va_list) <-> printf (char *, ...)
+    exit     (255);
+}
+
+void failure(char *s, ...) {
+    va_list args;
+
+    va_start (args, s);
+    vfailure (s, args);
+}
 
 void *__start_custom_data;
 void *__stop_custom_data;
 
-char* get_string (bytefile *f, int pos) {
+char* get_string(bytefile *f, int pos) {
     return &f->string_ptr[pos];
 }
 
-/* Gets a name for a public symbol */
-char* get_public_name (bytefile *f, int i) {
+char* get_public_name(bytefile *f, int i) {
     return get_string (f, f->public_ptr[i*2]);
 }
 
-/* Gets an offset for a publie symbol */
-int get_public_offset (bytefile *f, int i) {
+int get_public_offset(bytefile *f, int i) {
     return f->public_ptr[i*2+1];
 }
 
-/* Reads a binary bytecode file by name and unpacks it */
-bytefile* read_file (char *fname) {
-    FILE *f = fopen (fname, "rb");
+bytefile* read_file(char *fname) {
+    FILE *f = fopen(fname, "rb");
     long size;
     bytefile *file;
 
     if (f == 0) {
-        failure ("%s\n", strerror (errno));
+        failure("%s\n", strerror (errno));
     }
 
     if (fseek (f, 0, SEEK_END) == -1) {
-        failure ("%s\n", strerror (errno));
+        failure("%s\n", strerror (errno));
     }
 
     file = (bytefile*) malloc (sizeof(int)*4 + (size = ftell (f)));
 
     if (file == 0) {
-        failure ("*** FAILURE: unable to allocate memory.\n");
+        failure("*** FAILURE: unable to allocate memory.\n");
     }
 
     rewind (f);
 
     if (size != fread (&file->stringtab_size, 1, size, f)) {
-        failure ("%s\n", strerror (errno));
+        failure("%s\n", strerror (errno));
     }
 
     fclose (f);

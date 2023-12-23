@@ -88,9 +88,7 @@ class interpretator {
     void eval_barray();
 
 public:
-    interpretator(bytefile* bf) : bf(bf) {
-        ip = bf->code_ptr;
-    }
+    interpretator(bytefile* bf);
 
     void intepretate();
 };

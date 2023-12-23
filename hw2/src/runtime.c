@@ -126,14 +126,14 @@ void pop_extra_root (void ** p) {
 
 /* end */
 
-static void vfailure (const char *s, va_list args) {
+static void vfailure (char *s, va_list args) {
     fflush   (stdout);
     fprintf  (stderr, "*** FAILURE: ");
     vfprintf (stderr, s, args); // vprintf (char *, va_list) <-> printf (char *, ...)
     exit     (255);
 }
 
-void failure(const char *s, ...) {
+void failure(char *s, ...) {
     va_list args;
 
     va_start (args, s);
