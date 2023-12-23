@@ -1,21 +1,22 @@
-# ifndef __LAMA_RUNTIME__
-# define __LAMA_RUNTIME__
+#pragma once
 
-# include <stdio.h>
-# include <stdio.h>
-# include <string.h>
-# include <stdarg.h>
-# include <stdlib.h>
-# include <sys/mman.h>
-# include <assert.h>
-# include <errno.h>
-# include <regex.h>
-# include <time.h>
-# include <limits.h>
-# include <ctype.h>
+#ifndef VM_HW2_RUNTIME
+#define VM_HW2_RUNTIME
 
-# define WORD_SIZE (CHAR_BIT * sizeof(int))
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <limits.h>
+#include <regex.h>
+#include <stdarg.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <sys/mman.h>
+#include <time.h>
 
-void failure(char *s, ...);
+#define WORD_SIZE (CHAR_BIT * sizeof(int))
 
-# endif
+void failure(const char *s, ...);
+
+#endif
