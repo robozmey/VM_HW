@@ -333,9 +333,12 @@ void interpretator::intepretate() {
                         eval_string(get_int());
                         break;
 
-                    case  2:
-                        eval_sexp(get_string(), get_int());
+                    case  2: {
+                        char *name = get_string();
+                        int n = get_int();
+                        eval_sexp(name, n);
                         break;
+                    }
 
                     case  3: // notimpl
                         not_impl();
