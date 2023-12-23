@@ -137,8 +137,27 @@ void interpretator::eval_sexp(char* name, int n) {
     push(reinterpret_cast<int64_t>(Bsexp_(box(n + 1), reinterpret_cast<void*>(arr))));
     delete[] arr;
 }
-//void interpreter::eval_sti() {}
-void interpretator::eval_sta() {}
+//void interpreter::eval_sti() {
+// }
+void interpretator::eval_sta() {
+    int32_t v = pop();
+    int32_t i = pop();
+
+    if (!boxed(i)) {
+        *(void**)i = reinterpret_cast<void*>(v);
+        push(v);
+        return;
+    }
+
+    int32_t x = pop();
+    push(reinterpret_cast<int32_t>(
+            Bsta(
+                reinterpret_cast<void*>(v),
+                i,
+                reinterpret_cast<void*>(x)
+            )
+    ));
+}
 void interpretator::eval_jmp(int32_t addr) {
     ip = bf->code_ptr + addr;
 }
