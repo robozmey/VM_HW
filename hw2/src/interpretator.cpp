@@ -36,8 +36,8 @@ extern "C" {
     extern void* Bclosure_arr(int, void*, int*);
 }
 
-extern int32_t*& stack_top;
-extern int32_t*& stack_bottom;
+extern int32_t* __gc_stack_top;
+extern int32_t* __gc_stack_bottom;
 extern const int stack_size;
 
 variable::variable(int type, int32_t val): type {type}, val {val} { }
@@ -84,7 +84,7 @@ inline int32_t& interpretator::get_var(variable& var) {
     }
 }
 
-inline inline void interpretator::eval_binop(int op) {
+inline void interpretator::eval_binop(int op) {
     int32_t y = unbox(pop());
     int32_t x = unbox(pop());
     int32_t res;
@@ -515,26 +515,26 @@ void interpretator::intepretate() {
 }
 
 // stack
-inline inline int32_t* interpretator::get_stack_bottom() {
-    return stack_bottom;
+inline int32_t* interpretator::get_stack_bottom() {
+    return __gc_stack_bottom;
 }
 
-inline inline int32_t* interpretator::get_stack_top() {
-    return stack_top;
+inline int32_t* interpretator::get_stack_top() {
+    return __gc_stack_top;
 }
 
 inline void interpretator::push(int32_t value) {
-    if (stack_bottom == stack_top - stack_size) {
+    if (__gc_stack_bottom == stack_end) {
         throw new std::runtime_error("Pushing on full stack exceeded");
     }
-    *(--stack_bottom) = value;
+    *(--__gc_stack_bottom) = value;
 }
 
 inline int32_t interpretator::pop() {
-    if (stack_bottom == stack_top) {
+    if (__gc_stack_bottom == __gc_stack_top) {
         throw new std::runtime_error("Popping empty stack exceeded");
     }
-    return *(stack_bottom++);
+    return *(__gc_stack_bottom++);
 }
 
 inline int32_t interpretator::top() {
@@ -547,7 +547,7 @@ inline int32_t interpretator::top(int i) {
                 "get top " + std::to_string(i) + " element when stack size " + std::to_string(cur_size()));
     }
 
-    return *(stack_bottom + i);
+    return *(__gc_stack_bottom + i);
 }
 
 inline void interpretator::allocate(int n) {
@@ -556,25 +556,25 @@ inline void interpretator::allocate(int n) {
                                      std::to_string(stack_size - cur_size()));
     }
 
-    stack_bottom -= n;
+    __gc_stack_bottom -= n;
 }
 
 inline void interpretator::drop(int n) {
     if (cur_size() < n) [[unlikely]]
                 throw new std::runtime_error("drop " + std::to_string(n) + " elements when stack size is " + std::to_string(cur_size()));
 
-    stack_bottom += n;
+    __gc_stack_bottom += n;
 }
 
 inline void interpretator::prologue(int32_t nlocals, int32_t nargs) {
     push(reinterpret_cast<int64_t>(fp));
-    fp = stack_bottom;
+    fp = __gc_stack_bottom;
     allocate(nlocals);
 }
 
 inline int32_t interpretator::epilogue() {
     int32_t ret_val = pop();
-    stack_bottom = fp;
+    __gc_stack_bottom = fp;
     fp = reinterpret_cast<int32_t*>(pop());
     int32_t nargs = pop();
     int32_t ip = pop();
@@ -587,8 +587,8 @@ inline void interpretator::reverse(int nargs) {
     if (cur_size() < nargs) [[unlikely]]
                 throw new std::runtime_error("reverse " + std::to_string(nargs) + " elements when stack size is " + std::to_string(cur_size()));
 
-    int32_t* st = stack_bottom + nargs - 1;
-    int32_t* fn = stack_bottom;
+    int32_t* st = __gc_stack_bottom + nargs - 1;
+    int32_t* fn = __gc_stack_bottom;
 
     while (st > fn) {
         std::swap(*(st--), *(fn++));
@@ -596,31 +596,32 @@ inline void interpretator::reverse(int nargs) {
 }
 
 inline int32_t& interpretator::get_arg(int arg) {
-    if (fp + 3 + arg >= stack_top) [[unlikely]]
+    if (fp + 3 + arg >= __gc_stack_top) [[unlikely]]
                 throw new std::runtime_error("fail to take argument " + std::to_string(arg));
 
     return *(fp + 3 + arg);
 }
 
 inline int32_t& interpretator::get_local(int local) {
-    if (fp - local - 1 < (stack_top - stack_size)) [[unlikely]]
+    if (fp - local - 1 < (__gc_stack_top - stack_size)) [[unlikely]]
                 throw new std::runtime_error("fail to get local " + std::to_string(local));
 
     return *(fp - local - 1);
 }
 
 inline int32_t& interpretator::get_closure() {
-    if (fp + 1 >= stack_top || fp + 2 + *(fp + 1) >= stack_top) [[unlikely]]
+    if (fp + 1 >= __gc_stack_top || fp + 2 + *(fp + 1) >= __gc_stack_top) [[unlikely]]
                 throw new std::runtime_error("faile to get closure");
 
     return *(fp + 2 + *(fp + 1));
 }
 
 inline int32_t interpretator::cur_size() {
-    return stack_top - stack_bottom;
+    return __gc_stack_top - __gc_stack_bottom;
 }
 
 interpretator::interpretator(bytefile* bf) : bf(bf) {
+    stack_end = __gc_stack_top - stack_size;
     push(reinterpret_cast<int32_t>((char *)nullptr));
     push(0);
     ip = bf->code_ptr;
