@@ -89,7 +89,7 @@ inline void interpretator::eval_binop(int op) {
     int32_t x = unbox(pop());
     int32_t res;
 
-    switch (op+1) {
+    switch (op) {
         case 1:
             res = x + y;
             break;
@@ -331,8 +331,7 @@ void interpretator::intepretate() {
 
                 /* BINOP */
             case 0:
-//                fprintf (f, "BINOP\t%s", ops[l-1]);
-                eval_binop(l-1);
+                eval_binop(l);
                 break;
 
             case 1:
