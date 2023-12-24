@@ -104,7 +104,7 @@ inline void interpretator::eval_binop(int op) {
     int32_t x = unbox(pop());
     int32_t res = ops_table[op](x, y);
 
-    switch (op) {
+    switch (op+1) {
         case 1:
             res = x + y;
             break;
