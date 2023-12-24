@@ -1021,7 +1021,7 @@ extern void* Lstring (void *p) {
     return s;
 }
 
-extern void* Bclosure (int bn, void *entry, void* vals) {
+extern void* Bclosure_arr (int bn, void *entry, int* vals) {
     int     i, ai;
     register int * ebp asm ("ebp");
     size_t  *argss;
@@ -1044,7 +1044,7 @@ extern void* Bclosure (int bn, void *entry, void* vals) {
     ((void**) r->contents)[0] = entry;
 
     for (i = 0; i<n; i++) {
-        ai = *((int*)vals+i);
+        ai = vals[i];
         ((int*)r->contents)[i+1] = ai;
     }
 
@@ -1064,7 +1064,7 @@ extern void* Bclosure (int bn, void *entry, void* vals) {
     return r->contents;
 }
 
-extern void* Barray (int bn, void* arr) {
+extern void* Barray_arr (int bn, int* vals) {
     int     i, ai;
     data    *r;
     int     n = UNBOX(bn);
@@ -1080,7 +1080,7 @@ extern void* Barray (int bn, void* arr) {
     r->tag = ARRAY_TAG | (n << 3);
 
     for (i = 0; i<n; i++) {
-        ai = *((int*)arr + i);
+        ai = *(vals++);
         ((int*)r->contents)[i] = ai;
     }
 
@@ -1091,7 +1091,7 @@ extern void* Barray (int bn, void* arr) {
     return r->contents;
 }
 
-extern void* Bsexp_(int bn, void* vals) {
+extern void* Bsexp_arr(int bn, int tag, int *vals) {
     int     i;
     int     ai;
     size_t *p;
@@ -1112,13 +1112,13 @@ extern void* Bsexp_(int bn, void* vals) {
     d->tag = SEXP_TAG | ((n-1) << 3);
 
     for (i=0; i<n-1; i++) {
-        ai = *((int*)vals+i);
+        ai = *(vals++);
 
         p = (size_t*) ai;
         ((int*)d->contents)[i] = ai;
     }
 
-    r->tag = UNBOX(*((int*)vals+i));
+    r->tag = UNBOX(tag);
 
 #ifdef DEBUG_PRINT
     r->tag = SEXP_TAG | ((r->tag) << 3);
@@ -1126,6 +1126,7 @@ extern void* Bsexp_(int bn, void* vals) {
   printf("Bsexp: ends\n"); fflush (stdout);
   indent--;
 #endif
+
     __post_gc();
 
     return d->contents;

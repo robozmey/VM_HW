@@ -24,9 +24,6 @@ public:
 
 class interpretator {
 
-//    int32_t *&stack_top;
-//    int32_t *&stack_bottom;
-//    int32_t *&stack_size;
     int32_t *fp;
 
     bytefile *bf;
@@ -39,7 +36,7 @@ class interpretator {
     int32_t top(int i);
     void allocate(int n);
     void drop(int n);
-    void prologue(int32_t nlocals);
+    void prologue(int32_t nlocals, int32_t nargs);
     int32_t epilogue();
     void reverse(int nargs);
     int32_t& get_arg(int arg);
@@ -73,7 +70,7 @@ class interpretator {
     void eval_cjmpnz(int32_t addr);
     void eval_begin(int32_t nargs, int32_t nlocals);
     void eval_cbegin(int32_t nargs, int32_t nlocals);
-    void eval_closure(int addr, std::vector<variable> vars);
+    void eval_closure();
     void eval_call(int32_t addr, int32_t nargs);
     void eval_callc(int32_t nargs);
     void eval_tag(char* name, int32_t n);
@@ -91,6 +88,10 @@ public:
     interpretator(bytefile* bf);
 
     void intepretate();
+
+    int32_t *get_stack_bottom();
+
+    int32_t *get_stack_top();
 };
 
 
