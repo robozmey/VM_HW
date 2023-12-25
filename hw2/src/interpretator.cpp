@@ -373,29 +373,39 @@ void interpretator::intepretate() {
 
         switch (h) {
             case EXIT_CODE:
+#ifdef STATISTICS
                 statistics["EXIT"]++;
+#endif
                 return;
 
                 /* BINOP */
             case BINOP_CODE:
+#ifdef STATISTICS
                 statistics["BINOP"]++;
+#endif
                 eval_binop(l);
                 break;
 
             case PUT_CODE:
                 switch (l) {
                     case  CONST_CODE:
+#ifdef STATISTICS
                         statistics["CONST"]++;
+#endif
                         eval_const(get_int());
                         break;
 
                     case  STRING_CODE:
+#ifdef STATISTICS
                         statistics["STRING"]++;
+#endif
                         eval_string(get_int());
                         break;
 
                     case  SEXP_CODE: {
+#ifdef STATISTICS
                         statistics["SEXP"]++;
+#endif
                         char *name = get_string();
                         int n = get_int();
                         eval_sexp(name, n);
@@ -403,47 +413,67 @@ void interpretator::intepretate() {
                     }
 
                     case  STI_CODE: // notimpl
+#ifdef STATISTICS
                         statistics["STI"]++;
+#endif
                         not_impl();
                         break;
 
                     case  STA_CODE:
+#ifdef STATISTICS
                         statistics["STA"]++;
+#endif
                         eval_sta();
                         break;
 
                     case  JMP_CODE:
+#ifdef STATISTICS
                         statistics["JMP"]++;
+#endif
                         eval_jmp(get_int());
                         break;
 
                     case  END_CODE:
+#ifdef STATISTICS
                         statistics["END"]++;
+#endif
                         eval_end();
                         if (ip == nullptr)
                             return;
                         break;
 
                     case  RET_CODE: // notimpl
+#ifdef STATISTICS
+                        statistics["RET"]++;
+#endif
                         not_impl();
                         break;
 
                     case  DROP_CODE:
+#ifdef STATISTICS
                         statistics["DROP"]++;
+#endif
                         eval_drop();
                         break;
 
                     case  DUP_CODE:
+#ifdef STATISTICS
                         statistics["DUP"]++;
+#endif
                         eval_dup();
                         break;
 
                     case SWAP_CODE: // notimpl
+#ifdef STATISTICS
+                        statistics["SWAP"]++;
+#endif
                         not_impl();
                         break;
 
                     case ELEM_CODE:
+#ifdef STATISTICS
                         statistics["ELEM"]++;
+#endif
                         eval_elem();
                         break;
 
@@ -458,15 +488,21 @@ void interpretator::intepretate() {
                 variable var(l, get_int());
                 switch (h) {
                     case GLOBAL_CODE:
+#ifdef STATISTICS
                         statistics["LD"]++;
+#endif
                         eval_ld(var);
                         break;
                     case LOCAL_CODE:
+#ifdef STATISTICS
                         statistics["LDA"]++;
+#endif
                         eval_lda(var);
                         break;
                     case ARG_CODE:
+#ifdef STATISTICS
                         statistics["ST"]++;
+#endif
                         eval_st(var);
                         break;
                     default:
@@ -477,67 +513,89 @@ void interpretator::intepretate() {
             case FUNC_CODE:
                 switch (l) {
                     case  CJMPZ_CODE:
+#ifdef STATISTICS
                         statistics["CJMPz"]++;
+#endif
                         eval_cjmpz(get_int());
                         break;
 
                     case  CJMPNZ_CODE:
+#ifdef STATISTICS
                         statistics["CJMPnz"]++;
+#endif
                         eval_cjmpnz(get_int());
                         break;
 
                     case  BEGIN_CODE: {
+#ifdef STATISTICS
                         statistics["BEGIN"]++;
+#endif
                         int nargs = get_int();
                         int nlocals = get_int();
                         eval_begin(nargs, nlocals);
                         break;
                     }
                     case  CBEGIN_CODE: {
+#ifdef STATISTICS
                         statistics["CBEGIN"]++;
+#endif
                         int nargs = get_int();
                         int nlocals = get_int();
                         eval_cbegin(nargs, nlocals);
                         break;
                     }
                     case  CLOSURE_CODE: {
+#ifdef STATISTICS
                         statistics["CLOSURE"]++;
+#endif
                         eval_closure();
                         break;
                     }
                     case  CALLC_CODE:
+#ifdef STATISTICS
                         statistics["CALLC"]++;
+#endif
                         eval_callc(get_int());
                         break;
 
                     case  CALL_CODE: {
+#ifdef STATISTICS
                         statistics["CALL"]++;
+#endif
                         int addr = get_int();
                         int nargs = get_int();
                         eval_call(addr, nargs);
                         break;
                     }
                     case  TAG_CODE: {
+#ifdef STATISTICS
                         statistics["TAG"]++;
+#endif
                         char *name = get_string();
                         int n = get_int();
                         eval_tag(name, n);
                         break;
                     }
                     case  ARRAY_CODE:
+#ifdef STATISTICS
                         statistics["ARRAY"]++;
+#endif
                         eval_array(get_int());
                         break;
 
                     case  FAIL_CODE: {
+#ifdef STATISTICS
                         statistics["FAIL"]++;
+#endif
                         int x = get_int(), y = get_int();
 //                        debug(printf("FAIL %d %d\n", x, y););
                         eval_fail(x, y);
                         break;
                     }
                     case LINE_CODE:
+#ifdef STATISTICS
                         statistics["LINE"]++;
+#endif
                         eval_line();
                         break;
 
@@ -547,34 +605,46 @@ void interpretator::intepretate() {
                 break;
 
             case PATT_CODE:
+#ifdef STATISTICS
                 statistics["PATT"]++;
+#endif
                 eval_patt(l);
                 break;
 
             case EXTERNAL_CODE: {
                 switch (l) {
                     case LREAD_CODE:
+#ifdef STATISTICS
                         statistics["LREAD"]++;
+#endif
                         eval_lread();
                         break;
 
                     case LWRITE_CODE:
+#ifdef STATISTICS
                         statistics["LWRITE"]++;
+#endif
                         eval_lwrite();
                         break;
 
                     case LLENGTH_CODE:
+#ifdef STATISTICS
                         statistics["LLENGTH"]++;
+#endif
                         eval_llength();
                         break;
 
                     case LSTRING_CODE:
+#ifdef STATISTICS
                         statistics["LSTRING"]++;
+#endif
                         eval_lstring();
                         break;
 
                     case BARRAY_CODE:
+#ifdef STATISTICS
                         statistics["BARRAY"]++;
+#endif
                         eval_barray();
                         break;
 
