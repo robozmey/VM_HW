@@ -14,7 +14,7 @@ int main (int argc, char* argv[]) {
     __init();
 
     bytefile *f = read_file (argv[1]);
-    auto i = interpretator (f, __gc_stack_top, __gc_stack_bottom);
+    auto i = interpretator (f);
     i.intepretate();
 
 //    std::vector<std::pair<int, std::string>> statistics;
