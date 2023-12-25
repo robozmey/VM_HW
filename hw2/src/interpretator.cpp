@@ -143,7 +143,7 @@ inline void interpretator::eval_string(int32_t offset) {
 inline void interpretator::eval_sexp(char* name, int n) {
     int32_t tag = LtagHash(name);
     reverse(n);
-    int32_t res = reinterpret_cast<int32_t>(Bsexp_arr(box(n+1), tag, get_stack_bottom()));
+    int32_t res = reinterpret_cast<int32_t>(Bsexp_arr(box(n+1), tag, get_stack_top()));
     drop(n);
     push(res);
 }
@@ -308,7 +308,7 @@ inline void interpretator::eval_lstring() {
 inline void interpretator::eval_barray() {
     int32_t len = get_int();
     reverse(len);
-    int32_t res = reinterpret_cast<int32_t>(Barray_arr(box(len), get_stack_bottom()));
+    int32_t res = reinterpret_cast<int32_t>(Barray_arr(box(len), get_stack_top()));
     drop(len);
     push(res);
 }
@@ -564,17 +564,17 @@ inline int32_t* interpretator::get_stack_top() {
 }
 
 inline void interpretator::push(int32_t value) {
-    if (stack_bottom == stack_end) {
+    if (stack_top == stack_end) {
         throw new std::runtime_error("Pushing on full stack exceeded");
     }
-    *(--stack_bottom) = value;
+    *(--stack_top) = value;
 }
 
 inline int32_t interpretator::pop() {
     if (stack_bottom == stack_top) {
         throw new std::runtime_error("Popping empty stack exceeded");
     }
-    return *(stack_bottom++);
+    return *(stack_top++);
 }
 
 inline int32_t interpretator::top() {
@@ -587,7 +587,7 @@ inline int32_t interpretator::top(int i) {
                 "get top " + std::to_string(i) + " element when stack size " + std::to_string(cur_size()));
     }
 
-    return *(stack_bottom + i);
+    return *(stack_top + i);
 }
 
 inline void interpretator::allocate(int n) {
@@ -596,25 +596,25 @@ inline void interpretator::allocate(int n) {
                                      std::to_string(stack_size - cur_size()));
     }
 
-    stack_bottom -= n;
+    stack_top -= n;
 }
 
 inline void interpretator::drop(int n) {
     if (cur_size() < n) [[unlikely]]
                 throw new std::runtime_error("drop " + std::to_string(n) + " elements when stack size is " + std::to_string(cur_size()));
 
-    stack_bottom += n;
+    stack_top += n;
 }
 
 inline void interpretator::prologue(int32_t nlocals, int32_t nargs) {
     push(reinterpret_cast<int64_t>(fp));
-    fp = stack_bottom;
+    fp = stack_top;
     allocate(nlocals);
 }
 
 inline int32_t interpretator::epilogue() {
     int32_t ret_val = pop();
-    stack_bottom = fp;
+    stack_top = fp;
     fp = reinterpret_cast<int32_t*>(pop());
     int32_t nargs = pop();
     int32_t new_ip = pop();
@@ -627,8 +627,8 @@ inline void interpretator::reverse(int nargs) {
     if (cur_size() < nargs) [[unlikely]]
                 throw new std::runtime_error("reverse " + std::to_string(nargs) + " elements when stack size is " + std::to_string(cur_size()));
 
-    int32_t* st = stack_bottom + nargs - 1;
-    int32_t* fn = stack_bottom;
+    int32_t* st = stack_top + nargs - 1;
+    int32_t* fn = stack_top;
 
     while (st > fn) {
         std::swap(*(st--), *(fn++));
@@ -636,28 +636,28 @@ inline void interpretator::reverse(int nargs) {
 }
 
 inline int32_t& interpretator::get_arg(int arg) {
-    if (fp + 3 + arg >= stack_top) [[unlikely]]
+    if (fp + 3 + arg >= stack_bottom) [[unlikely]]
                 throw new std::runtime_error("fail to take argument " + std::to_string(arg));
 
     return *(fp + 3 + arg);
 }
 
 inline int32_t& interpretator::get_local(int local) {
-    if (fp - local - 1 < (stack_top - stack_size)) [[unlikely]]
+    if (fp - local - 1 < (stack_bottom - stack_size)) [[unlikely]]
                 throw new std::runtime_error("fail to get local " + std::to_string(local));
 
     return *(fp - local - 1);
 }
 
 inline int32_t& interpretator::get_closure() {
-    if (fp + 1 >= stack_top || fp + 2 + *(fp + 1) >= stack_top) [[unlikely]]
+    if (fp + 1 >= stack_bottom || fp + 2 + *(fp + 1) >= stack_bottom) [[unlikely]]
                 throw new std::runtime_error("faile to get closure");
 
     return *(fp + 2 + *(fp + 1));
 }
 
 inline int32_t interpretator::cur_size() {
-    return stack_top - stack_bottom;
+    return  stack_bottom - stack_top;
 }
 
 interpretator::interpretator(bytefile* bf, int32_t *&stack_top, int32_t *&stack_bottom) : bf(bf), stack_top(stack_top), stack_bottom(stack_bottom), ip(bf->code_ptr) {
@@ -666,6 +666,6 @@ interpretator::interpretator(bytefile* bf, int32_t *&stack_top, int32_t *&stack_
     push(0); //argc
     push(0); //argv
     push(reinterpret_cast<int32_t>(nullptr)); // dummy ip
-    push(2); //narg
+//    push(2); //narg
     ip = bf->code_ptr;
 }
