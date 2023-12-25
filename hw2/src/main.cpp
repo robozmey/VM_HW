@@ -17,13 +17,15 @@ int main (int argc, char* argv[]) {
     auto i = interpretator (f);
     i.intepretate();
 
-//    std::vector<std::pair<int, std::string>> statistics;
-//    for (auto [bytecode, cnt]: i.statistics) {
-//        statistics.push_back({-cnt, bytecode});
-//    }
-//    std::sort(statistics.begin(), statistics.end());
-//    for (auto [cnt, bytecode]: statistics) {
-//        std::cout << bytecode << " " << -cnt << std::endl;
-//    }
+#ifdef STATISTICS
+    std::vector<std::pair<int, std::string>> statistics;
+    for (auto [bytecode, cnt]: i.statistics) {
+        statistics.push_back({-cnt, bytecode});
+    }
+    std::sort(statistics.begin(), statistics.end());
+    for (auto [cnt, bytecode]: statistics) {
+        std::cout << bytecode << " " << -cnt << std::endl;
+    }
+#endif
     return 0;
 }
