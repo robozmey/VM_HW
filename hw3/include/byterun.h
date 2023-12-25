@@ -10,6 +10,7 @@ typedef struct {
     int   stringtab_size;          /* The size (in bytes) of the string table        */
     int   global_area_size;        /* The size (in words) of global area             */
     int   public_symbols_number;   /* The number of public symbols                   */
+    int   bytecode_size;
     char  buffer[0];
 } bytefile;
 

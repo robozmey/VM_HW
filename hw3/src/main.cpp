@@ -16,13 +16,12 @@ int main (int argc, char* argv[]) {
     bytefile *f = read_file (argv[1]);
 
     std::map<instr, int, decltype([](instr i1, instr i2) {
-        return i1.len < i2.len || i1.len == i2.len && memcmp(i1.ptr, i2.ptr, i1.len) < 0;
+        return memcmp(i1.ptr, i2.ptr, i1.len) < 0;
     }) > count;
 
     char* ip = f->code_ptr;
-    while (ip != nullptr) {
+    while (ip < f->code_ptr + f->bytecode_size) {
         char* new_ip = disassemble_instruction(nullptr, f, ip);
-        if (new_ip == nullptr) break;
 
         count[{ip, new_ip - ip}]++;
 

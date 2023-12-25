@@ -73,6 +73,7 @@ bytefile* read_file (char *fname) {
     file->public_ptr  = (int*) file->buffer;
     file->code_ptr    = &file->string_ptr [file->stringtab_size];
     file->global_ptr  = (int*) malloc (file->global_area_size * sizeof (int));
+    file->bytecode_size = (char*) &file->stringtab_size + size - file->code_ptr;
 
     return file;
 }
@@ -105,7 +106,6 @@ char * disassemble_instruction (FILE *f, bytefile *bf, char *ip) {
     switch (h) {
         case 15:
             flogf (f, "STOP");
-            ip = NULL;
             break;
 
             /* BINOP */
