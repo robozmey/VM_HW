@@ -324,7 +324,7 @@ static void not_impl() {
 #define FUNC_CODE 5
 #define PATT_CODE 6
 #define EXTERNAL_CODE 7
-//#define EXIT_CODE 15
+#define EXIT_CODE 15
 
 //PUT
 #define CONST_CODE 0
@@ -369,8 +369,8 @@ void interpretator::intepretate() {
 //        std::cout<<int(h)<<" "<<int(l)<<std::endl;
 
         switch (h) {
-//            case EXIT_CODE:
-//                return;
+            case EXIT_CODE:
+                return;
 
                 /* BINOP */
             case BINOP_CODE:
