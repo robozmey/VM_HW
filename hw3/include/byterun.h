@@ -27,3 +27,5 @@ int get_public_offset(bytefile *f, int i);
 
 /* Reads a binary bytecode file by name and unpacks it */
 bytefile* read_file(char *fname);
+
+char* disassemble_instruction (FILE *f, bytefile *bf, char *ip);

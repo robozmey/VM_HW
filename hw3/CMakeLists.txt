@@ -8,6 +8,5 @@ set(CMAKE_CXX_FLAGS "-m32 -fstack-protector-all")
 include_directories(include)
 
 add_executable(VM_HW_2 src/main.cpp
-        src/runtime.c
-        src/bytefile.c
-        src/interpretator.cpp)
+        src/byterun.c
+)
