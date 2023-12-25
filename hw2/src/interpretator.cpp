@@ -5,6 +5,7 @@
 #include <string>
 #include <functional>
 #include <stdexcept>
+#include <iostream>
 #include "interpretator.h"
 
 extern "C" {
@@ -36,8 +37,6 @@ extern "C" {
     extern void* Bclosure_arr(int, void*, int*);
 }
 
-extern int32_t* __gc_stack_top;
-extern int32_t* __gc_stack_bottom;
 extern const int stack_size;
 
 variable::variable(int type, int32_t val): type {type}, val {val} { }
@@ -46,15 +45,15 @@ std::string ops [13] = {"+", "-", "*", "/", "%", "<", "<=", ">", ">=", "==", "!=
 std::string pats[7] = {"=str", "#string", "#array", "#sexp", "#ref", "#val", "#fun"};
 std::string lds [3] = {"LD", "LDA", "ST"};
 
-inline int32_t box(int32_t value) {
+static inline int32_t box(int32_t value) {
     return (value << 1) | 1;
 }
 
-inline int32_t unbox(int32_t value) {
+static inline int32_t unbox(int32_t value) {
     return value >> 1;
 }
 
-inline bool boxed(int32_t value) {
+static inline bool boxed(int32_t value) {
     return value & 1;
 }
 
@@ -317,73 +316,117 @@ static void not_impl() {
     throw std::runtime_error("Not implemented");
 }
 
+#define BINOP_CODE 0
+#define PUT_CODE 1
+#define GLOBAL_CODE 2
+#define LOCAL_CODE 3
+#define ARG_CODE 4
+#define FUNC_CODE 5
+#define PATT_CODE 6
+#define EXTERNAL_CODE 7
+//#define EXIT_CODE 15
+
+//PUT
+#define CONST_CODE 0
+#define STRING_CODE 1
+#define SEXP_CODE 2
+#define STI_CODE 3
+#define STA_CODE 4
+#define JMP_CODE 5
+#define END_CODE 6
+#define RET_CODE 7
+#define DROP_CODE 8
+#define DUP_CODE 9
+#define SWAP_CODE 10
+#define ELEM_CODE 11
+
+//FUNC
+#define CJMPZ_CODE 0
+#define CJMPNZ_CODE 1
+#define BEGIN_CODE 2
+#define CBEGIN_CODE 3
+#define CLOSURE_CODE 4
+#define CALLC_CODE 5
+#define CALL_CODE 6
+#define TAG_CODE 7
+#define ARRAY_CODE 8
+#define FAIL_CODE 9
+#define LINE_CODE 10
+
+//EXETERNAL
+#define LREAD_CODE 0
+#define LWRITE_CODE 1
+#define LLENGTH_CODE 2
+#define LSTRING_CODE 3
+#define BARRAY_CODE 4
+
 void interpretator::intepretate() {
-    int pos = 0;
-    do {
-        pos++;
+    while (ip != nullptr) {
         char x = get_byte(),
                 h = (x & 0xF0) >> 4,
                 l = x & 0x0F;
 
+//        std::cout<<int(h)<<" "<<int(l)<<std::endl;
+
         switch (h) {
-            case 15:
-                goto stop;
+//            case EXIT_CODE:
+//                return;
 
                 /* BINOP */
-            case 0:
+            case BINOP_CODE:
                 eval_binop(l);
                 break;
 
-            case 1:
+            case PUT_CODE:
                 switch (l) {
-                    case  0:
+                    case  CONST_CODE:
                         eval_const(get_int());
                         break;
 
-                    case  1:
+                    case  STRING_CODE:
                         eval_string(get_int());
                         break;
 
-                    case  2: {
+                    case  SEXP_CODE: {
                         char *name = get_string();
                         int n = get_int();
                         eval_sexp(name, n);
                         break;
                     }
 
-                    case  3: // notimpl
+                    case  STI_CODE: // notimpl
                         not_impl();
                         break;
 
-                    case  4:
+                    case  STA_CODE:
                         eval_sta();
                         break;
 
-                    case  5:
+                    case  JMP_CODE:
                         eval_jmp(get_int());
                         break;
 
-                    case  6:
+                    case  END_CODE:
                         eval_end();
                         break;
 
-                    case  7: // notimpl
+                    case  RET_CODE: // notimpl
                         not_impl();
                         break;
 
-                    case  8:
+                    case  DROP_CODE:
                         eval_drop();
                         break;
 
-                    case  9:
+                    case  DUP_CODE:
                         eval_dup();
                         break;
 
-                    case 10: // notimpl
+                    case SWAP_CODE: // notimpl
                         not_impl();
                         break;
 
-                    case 11:
+                    case ELEM_CODE:
                         eval_elem();
                         break;
 
@@ -392,18 +435,18 @@ void interpretator::intepretate() {
                 }
                 break;
 
-            case 2:
-            case 3:
-            case 4: {
+            case GLOBAL_CODE:
+            case LOCAL_CODE:
+            case ARG_CODE: {
                 variable var(l, get_int());
-                switch (h - 2) {
-                    case 0:
+                switch (h) {
+                    case GLOBAL_CODE:
                         eval_ld(var);
                         break;
-                    case 1:
+                    case LOCAL_CODE:
                         eval_lda(var);
                         break;
-                    case 2:
+                    case ARG_CODE:
                         eval_st(var);
                         break;
                     default:
@@ -411,59 +454,59 @@ void interpretator::intepretate() {
                 }
                 break;
             }
-            case 5:
+            case FUNC_CODE:
                 switch (l) {
-                    case  0:
+                    case  CJMPZ_CODE:
                         eval_cjmpz(get_int());
                         break;
 
-                    case  1:
+                    case  CJMPNZ_CODE:
                         eval_cjmpnz(get_int());
                         break;
 
-                    case  2: {
+                    case  BEGIN_CODE: {
                         int nargs = get_int();
                         int nlocals = get_int();
                         eval_begin(nargs, nlocals);
                         break;
                     }
-                    case  3: {
+                    case  CBEGIN_CODE: {
                         int nargs = get_int();
                         int nlocals = get_int();
                         eval_cbegin(nargs, nlocals);
                         break;
                     }
-                    case  4: {
+                    case  CLOSURE_CODE: {
                         eval_closure();
                         break;
                     }
-                    case  5:
+                    case  CALLC_CODE:
                         eval_callc(get_int());
                         break;
 
-                    case  6: {
+                    case  CALL_CODE: {
                         int addr = get_int();
                         int nargs = get_int();
                         eval_call(addr, nargs);
                         break;
                     }
-                    case  7: {
+                    case  TAG_CODE: {
                         char *name = get_string();
                         int n = get_int();
                         eval_tag(name, n);
                         break;
                     }
-                    case  8:
+                    case  ARRAY_CODE:
                         eval_array(get_int());
                         break;
 
-                    case  9: {
+                    case  FAIL_CODE: {
                         int x = get_int(), y = get_int();
 //                        debug(printf("FAIL %d %d\n", x, y););
                         eval_fail(x, y);
                         break;
                     }
-                    case 10:
+                    case LINE_CODE:
                         eval_line();
                         break;
 
@@ -472,29 +515,29 @@ void interpretator::intepretate() {
                 }
                 break;
 
-            case 6:
+            case PATT_CODE:
                 eval_patt(l);
                 break;
 
-            case 7: {
+            case EXTERNAL_CODE: {
                 switch (l) {
-                    case 0:
+                    case LREAD_CODE:
                         eval_lread();
                         break;
 
-                    case 1:
+                    case LWRITE_CODE:
                         eval_lwrite();
                         break;
 
-                    case 2:
+                    case LLENGTH_CODE:
                         eval_llength();
                         break;
 
-                    case 3:
+                    case LSTRING_CODE:
                         eval_lstring();
                         break;
 
-                    case 4:
+                    case BARRAY_CODE:
                         eval_barray();
                         break;
 
@@ -508,32 +551,30 @@ void interpretator::intepretate() {
                 eval_fail(h, l);
         }
     }
-    while (ip != nullptr);
 
-    stop: return;
 }
 
 // stack
 inline int32_t* interpretator::get_stack_bottom() {
-    return __gc_stack_bottom;
+    return stack_bottom;
 }
 
 inline int32_t* interpretator::get_stack_top() {
-    return __gc_stack_top;
+    return stack_top;
 }
 
 inline void interpretator::push(int32_t value) {
-    if (__gc_stack_bottom == stack_end) {
+    if (stack_bottom == stack_end) {
         throw new std::runtime_error("Pushing on full stack exceeded");
     }
-    *(--__gc_stack_bottom) = value;
+    *(--stack_bottom) = value;
 }
 
 inline int32_t interpretator::pop() {
-    if (__gc_stack_bottom == __gc_stack_top) {
+    if (stack_bottom == stack_top) {
         throw new std::runtime_error("Popping empty stack exceeded");
     }
-    return *(__gc_stack_bottom++);
+    return *(stack_bottom++);
 }
 
 inline int32_t interpretator::top() {
@@ -546,7 +587,7 @@ inline int32_t interpretator::top(int i) {
                 "get top " + std::to_string(i) + " element when stack size " + std::to_string(cur_size()));
     }
 
-    return *(__gc_stack_bottom + i);
+    return *(stack_bottom + i);
 }
 
 inline void interpretator::allocate(int n) {
@@ -555,39 +596,39 @@ inline void interpretator::allocate(int n) {
                                      std::to_string(stack_size - cur_size()));
     }
 
-    __gc_stack_bottom -= n;
+    stack_bottom -= n;
 }
 
 inline void interpretator::drop(int n) {
     if (cur_size() < n) [[unlikely]]
                 throw new std::runtime_error("drop " + std::to_string(n) + " elements when stack size is " + std::to_string(cur_size()));
 
-    __gc_stack_bottom += n;
+    stack_bottom += n;
 }
 
 inline void interpretator::prologue(int32_t nlocals, int32_t nargs) {
     push(reinterpret_cast<int64_t>(fp));
-    fp = __gc_stack_bottom;
+    fp = stack_bottom;
     allocate(nlocals);
 }
 
 inline int32_t interpretator::epilogue() {
     int32_t ret_val = pop();
-    __gc_stack_bottom = fp;
+    stack_bottom = fp;
     fp = reinterpret_cast<int32_t*>(pop());
     int32_t nargs = pop();
-    int32_t ip = pop();
+    int32_t new_ip = pop();
     drop(nargs);
     push(ret_val);
-    return ip;
+    return new_ip;
 }
 
 inline void interpretator::reverse(int nargs) {
     if (cur_size() < nargs) [[unlikely]]
                 throw new std::runtime_error("reverse " + std::to_string(nargs) + " elements when stack size is " + std::to_string(cur_size()));
 
-    int32_t* st = __gc_stack_bottom + nargs - 1;
-    int32_t* fn = __gc_stack_bottom;
+    int32_t* st = stack_bottom + nargs - 1;
+    int32_t* fn = stack_bottom;
 
     while (st > fn) {
         std::swap(*(st--), *(fn++));
@@ -595,33 +636,36 @@ inline void interpretator::reverse(int nargs) {
 }
 
 inline int32_t& interpretator::get_arg(int arg) {
-    if (fp + 3 + arg >= __gc_stack_top) [[unlikely]]
+    if (fp + 3 + arg >= stack_top) [[unlikely]]
                 throw new std::runtime_error("fail to take argument " + std::to_string(arg));
 
     return *(fp + 3 + arg);
 }
 
 inline int32_t& interpretator::get_local(int local) {
-    if (fp - local - 1 < (__gc_stack_top - stack_size)) [[unlikely]]
+    if (fp - local - 1 < (stack_top - stack_size)) [[unlikely]]
                 throw new std::runtime_error("fail to get local " + std::to_string(local));
 
     return *(fp - local - 1);
 }
 
 inline int32_t& interpretator::get_closure() {
-    if (fp + 1 >= __gc_stack_top || fp + 2 + *(fp + 1) >= __gc_stack_top) [[unlikely]]
+    if (fp + 1 >= stack_top || fp + 2 + *(fp + 1) >= stack_top) [[unlikely]]
                 throw new std::runtime_error("faile to get closure");
 
     return *(fp + 2 + *(fp + 1));
 }
 
 inline int32_t interpretator::cur_size() {
-    return __gc_stack_top - __gc_stack_bottom;
+    return stack_top - stack_bottom;
 }
 
-interpretator::interpretator(bytefile* bf) : bf(bf) {
-    stack_end = __gc_stack_top - stack_size;
-    push(reinterpret_cast<int32_t>((char *)nullptr));
-    push(0);
+interpretator::interpretator(bytefile* bf, int32_t *&stack_top, int32_t *&stack_bottom) : bf(bf), stack_top(stack_top), stack_bottom(stack_bottom), ip(bf->code_ptr) {
+    fp = stack_bottom = stack_top = (new int[MAX_STACK_SIZE]) + MAX_STACK_SIZE;
+    stack_end = stack_top - MAX_STACK_SIZE;
+    push(0); //argc
+    push(0); //argv
+    push(reinterpret_cast<int32_t>(nullptr)); // dummy ip
+    push(2); //narg
     ip = bf->code_ptr;
 }

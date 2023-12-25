@@ -26,7 +26,10 @@ class interpretator {
 
     int32_t *fp;
 
-    int32_t *stack_end;
+    int32_t *&stack_top;
+    int32_t *&stack_bottom;
+
+    int32_t* stack_end;
 
     bytefile *bf;
 
@@ -87,7 +90,7 @@ class interpretator {
     void eval_barray();
 
 public:
-    interpretator(bytefile* bf);
+    interpretator(bytefile* bf, int32_t *&stack_top, int32_t *&stack_bottom);
 
     void intepretate();
 
