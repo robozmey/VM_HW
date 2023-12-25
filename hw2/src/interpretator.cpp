@@ -370,24 +370,29 @@ void interpretator::intepretate() {
 
         switch (h) {
             case EXIT_CODE:
+                statistics["EXIT"]++;
                 return;
 
                 /* BINOP */
             case BINOP_CODE:
+                statistics["BINOP"]++;
                 eval_binop(l);
                 break;
 
             case PUT_CODE:
                 switch (l) {
                     case  CONST_CODE:
+                        statistics["CONST"]++;
                         eval_const(get_int());
                         break;
 
                     case  STRING_CODE:
+                        statistics["STRING"]++;
                         eval_string(get_int());
                         break;
 
                     case  SEXP_CODE: {
+                        statistics["SEXP"]++;
                         char *name = get_string();
                         int n = get_int();
                         eval_sexp(name, n);
@@ -395,18 +400,22 @@ void interpretator::intepretate() {
                     }
 
                     case  STI_CODE: // notimpl
+                        statistics["STI"]++;
                         not_impl();
                         break;
 
                     case  STA_CODE:
+                        statistics["STA"]++;
                         eval_sta();
                         break;
 
                     case  JMP_CODE:
+                        statistics["JMP"]++;
                         eval_jmp(get_int());
                         break;
 
                     case  END_CODE:
+                        statistics["END"]++;
                         eval_end();
                         break;
 
@@ -415,10 +424,12 @@ void interpretator::intepretate() {
                         break;
 
                     case  DROP_CODE:
+                        statistics["DROP"]++;
                         eval_drop();
                         break;
 
                     case  DUP_CODE:
+                        statistics["DUP"]++;
                         eval_dup();
                         break;
 
@@ -427,6 +438,7 @@ void interpretator::intepretate() {
                         break;
 
                     case ELEM_CODE:
+                        statistics["ELEM"]++;
                         eval_elem();
                         break;
 
@@ -441,12 +453,15 @@ void interpretator::intepretate() {
                 variable var(l, get_int());
                 switch (h) {
                     case GLOBAL_CODE:
+                        statistics["LD"]++;
                         eval_ld(var);
                         break;
                     case LOCAL_CODE:
+                        statistics["LDA"]++;
                         eval_lda(var);
                         break;
                     case ARG_CODE:
+                        statistics["ST"]++;
                         eval_st(var);
                         break;
                     default:
@@ -457,56 +472,67 @@ void interpretator::intepretate() {
             case FUNC_CODE:
                 switch (l) {
                     case  CJMPZ_CODE:
+                        statistics["CJMPz"]++;
                         eval_cjmpz(get_int());
                         break;
 
                     case  CJMPNZ_CODE:
+                        statistics["CJMPnz"]++;
                         eval_cjmpnz(get_int());
                         break;
 
                     case  BEGIN_CODE: {
+                        statistics["BEGIN"]++;
                         int nargs = get_int();
                         int nlocals = get_int();
                         eval_begin(nargs, nlocals);
                         break;
                     }
                     case  CBEGIN_CODE: {
+                        statistics["CBEGIN"]++;
                         int nargs = get_int();
                         int nlocals = get_int();
                         eval_cbegin(nargs, nlocals);
                         break;
                     }
                     case  CLOSURE_CODE: {
+                        statistics["CLOSURE"]++;
                         eval_closure();
                         break;
                     }
                     case  CALLC_CODE:
+                        statistics["CALLC"]++;
                         eval_callc(get_int());
                         break;
 
                     case  CALL_CODE: {
+                        statistics["CALL"]++;
                         int addr = get_int();
                         int nargs = get_int();
                         eval_call(addr, nargs);
                         break;
                     }
                     case  TAG_CODE: {
+                        statistics["TAG"]++;
                         char *name = get_string();
                         int n = get_int();
                         eval_tag(name, n);
                         break;
                     }
                     case  ARRAY_CODE:
+                        statistics["ARRAY"]++;
                         eval_array(get_int());
                         break;
 
                     case  FAIL_CODE: {
+                        statistics["FAIL"]++;
                         int x = get_int(), y = get_int();
 //                        debug(printf("FAIL %d %d\n", x, y););
                         eval_fail(x, y);
                         break;
                     }
                     case LINE_CODE:
+                        statistics["LINE"]++;
                         eval_line();
                         break;
 
@@ -516,28 +542,34 @@ void interpretator::intepretate() {
                 break;
 
             case PATT_CODE:
+                statistics["PATT"]++;
                 eval_patt(l);
                 break;
 
             case EXTERNAL_CODE: {
                 switch (l) {
                     case LREAD_CODE:
+                        statistics["LREAD"]++;
                         eval_lread();
                         break;
 
                     case LWRITE_CODE:
+                        statistics["LWRITE"]++;
                         eval_lwrite();
                         break;
 
                     case LLENGTH_CODE:
+                        statistics["LLENGTH"]++;
                         eval_llength();
                         break;
 
                     case LSTRING_CODE:
+                        statistics["LSTRING"]++;
                         eval_lstring();
                         break;
 
                     case BARRAY_CODE:
+                        statistics["BARRAY"]++;
                         eval_barray();
                         break;
 
@@ -666,6 +698,6 @@ interpretator::interpretator(bytefile* bf, int32_t *&stack_top, int32_t *&stack_
     push(0); //argc
     push(0); //argv
     push(reinterpret_cast<int32_t>(nullptr)); // dummy ip
-    push(2); //narg
+//    push(2); //narg
     ip = bf->code_ptr;
 }

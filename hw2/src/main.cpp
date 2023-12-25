@@ -1,3 +1,5 @@
+#include <iostream>
+#include <algorithm>
 #include "interpretator.h"
 extern "C" {
     #include "runtime.h"
@@ -14,5 +16,14 @@ int main (int argc, char* argv[]) {
     bytefile *f = read_file (argv[1]);
     auto i = interpretator (f, __gc_stack_top, __gc_stack_bottom);
     i.intepretate();
+
+    std::vector<std::pair<int, std::string>> statistics;
+    for (auto [bytecode, cnt]: i.statistics) {
+        statistics.push_back({-cnt, bytecode});
+    }
+    std::sort(statistics.begin(), statistics.end());
+    for (auto [cnt, bytecode]: statistics) {
+        std::cout << bytecode << " " << -cnt << std::endl;
+    }
     return 0;
 }

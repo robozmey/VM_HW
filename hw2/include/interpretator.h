@@ -9,6 +9,8 @@
 #include "bytefile.h"
 #include <string>
 #include <vector>
+#include <map>
+#include <unordered_map>
 
 #define MAX_STACK_SIZE (1 << 20)
 
@@ -97,6 +99,8 @@ public:
     int32_t *get_stack_bottom();
 
     int32_t *get_stack_top();
+
+    std::unordered_map<std::string, int> statistics;
 };
 
 
