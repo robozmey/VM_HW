@@ -666,6 +666,6 @@ interpretator::interpretator(bytefile* bf, int32_t *&stack_top, int32_t *&stack_
     push(0); //argc
     push(0); //argv
     push(reinterpret_cast<int32_t>(nullptr)); // dummy ip
-//    push(2); //narg
+    push(2); //narg
     ip = bf->code_ptr;
 }
