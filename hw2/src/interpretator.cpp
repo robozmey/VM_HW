@@ -361,7 +361,7 @@ static void not_impl() {
 #define BARRAY_CODE 4
 
 void interpretator::intepretate() {
-    while (ip != nullptr) {
+    while (true) {
         char x = get_byte(),
                 h = (x & 0xF0) >> 4,
                 l = x & 0x0F;
@@ -417,6 +417,8 @@ void interpretator::intepretate() {
                     case  END_CODE:
                         statistics["END"]++;
                         eval_end();
+                        if (ip == nullptr)
+                            return;
                         break;
 
                     case  RET_CODE: // notimpl
