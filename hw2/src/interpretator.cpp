@@ -38,6 +38,7 @@ extern "C" {
 }
 
 extern int32_t *__gc_stack_top, *__gc_stack_bottom;
+int32_t* stack_end;
 
 extern const int stack_size;
 
@@ -595,7 +596,9 @@ inline int32_t* interpretator::get_stack_bottom() {
     return __gc_stack_bottom;
 }
 
-inline int32_t* interpretator::get_stack_top() {
+inline int32_t* interpretator::get_stack_top()https://github.com/robozmey/VM_HW/tree/master/hw2
+
+ {
     return __gc_stack_top;
 }
 

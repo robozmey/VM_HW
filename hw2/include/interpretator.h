@@ -28,8 +28,6 @@ class interpretator {
 
     int32_t *fp;
 
-    int32_t* stack_end;
-
     bytefile *bf;
 
     char *ip;
